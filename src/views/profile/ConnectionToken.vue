@@ -1,15 +1,15 @@
 <template>
   <GenericListPage
     ref="GenericListTable"
-    :table-config="tableConfig"
     :header-actions="headerActions"
-    :help-message="helpMessage"
+    :help-tip="helpMessage"
+    :table-config="tableConfig"
   />
 </template>
 
 <script>
 import { GenericListPage } from '@/layout/components'
-import { ShowKeyCopyFormatter } from '@/components/TableFormatters'
+import { ShowKeyCopyFormatter } from '@/components/Table/TableFormatters'
 
 export default {
   name: 'ConnectionToken',
@@ -19,16 +19,10 @@ export default {
   data() {
     const ajaxUrl = '/api/v1/authentication/connection-token/'
     return {
-      helpMessage: this.$t('setting.helpText.ConnectionTokenList'),
+      helpMessage: this.$t('ConnectionTokenList'),
       tableConfig: {
         url: ajaxUrl,
-        columns: [
-          'id', 'type_display',
-          'user_display', 'system_user_display', 'asset_display', 'application_display',
-          'date_expired', 'is_valid',
-          'date_created', 'created_by', 'org_name',
-          'actions'
-        ],
+        columnsExtra: ['action'],
         columnsShow: {
           min: ['id', 'actions'],
           default: [
@@ -40,8 +34,15 @@ export default {
             label: 'Token ID',
             formatter: ShowKeyCopyFormatter
           },
+          action: {
+            label: this.$t('PermAction'),
+            formatter: function(row) {
+              return row.actions.map(item => {
+                return item.label
+              }).join(', ')
+            }
+          },
           actions: {
-            prop: '',
             formatterArgs: {
               hasUpdate: false,
               hasClone: false,
@@ -49,16 +50,16 @@ export default {
               extraActions: [
                 {
                   name: 'Expired',
-                  title: this.$t('setting.Expire'),
+                  title: this.$t('Expire'),
                   type: 'info',
-                  can: ({ row }) => row['is_valid'],
+                  can: ({ row }) => !row['is_expired'] && this.$hasPerm('authentication.expire_connectiontoken'),
                   callback: function({ row }) {
                     this.$axios.patch(`${ajaxUrl}${row.id}/expire/`,
                     ).then(res => {
-                      this.getRefsListTable.reloadTable()
-                      this.$message.success(this.$t('common.updateSuccessMsg'))
+                      this.reloadTable()
+                      this.$message.success(this.$tc('UpdateSuccessMsg'))
                     }).catch(error => {
-                      this.$message.error(this.$t('common.updateErrorMsg' + ' ' + error))
+                      this.$message.error(this.$tc('UpdateErrorMsg' + ' ' + error))
                     })
                   }.bind(this)
                 }
@@ -82,8 +83,10 @@ export default {
     }
   },
   computed: {
-    getRefsListTable() {
-      return this.$refs.GenericListTable.$refs.ListTable.$refs.ListTable || {}
+  },
+  methods: {
+    reloadTable() {
+      return this.$refs.GenericListTable.reloadTable()
     }
   }
 }

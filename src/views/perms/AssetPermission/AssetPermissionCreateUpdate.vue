@@ -1,45 +1,48 @@
 <template>
   <GenericCreateUpdatePage
     :fields="fields"
-    :initial="initial"
     :fields-meta="fieldsMeta"
+    :initial="initial"
     :url="url"
+    v-bind="$data"
   />
 </template>
 
 <script>
 import { GenericCreateUpdatePage } from '@/layout/components'
-import PermissionFormActionField from '../components/PermissionFormActionField'
-import AssetSelect from '@/components/AssetSelect'
-import { getDayFuture } from '@/utils/common'
+import AssetSelect from '@/components/Apps/AssetSelect'
+import AccountFormatter from './components/AccountFormatter'
+import { AllAccount } from '../const'
+import ProtocolsSelect from '@/components/Form/FormFields/AllOrSpec.vue'
 
 export default {
+  name: 'AccountFormatter',
   components: {
     GenericCreateUpdatePage
   },
   data() {
     const nodesInitial = []
-    if (this.$route.query['node']) {
-      nodesInitial.push(this.$route.query.node)
+    if (this.$route.query['node_id']) {
+      nodesInitial.push(this.$route.query.node_id)
     }
     const assetsInitial = []
-    if (this.$route.query['asset']) {
-      assetsInitial.push(this.$route.query.asset)
+    if (this.$route.query['asset_id']) {
+      assetsInitial.push(this.$route.query.asset_id)
     }
     return {
       initial: {
-        is_active: true,
-        date_start: new Date().toISOString(),
-        date_expired: getDayFuture(36500, new Date()).toISOString(),
         nodes: nodesInitial,
-        assets: assetsInitial
+        assets: assetsInitial,
+        accounts: [AllAccount]
       },
       fields: [
-        [this.$t('common.Basic'), ['name']],
-        [this.$t('perms.User'), ['users', 'user_groups']],
-        [this.$t('perms.Asset'), ['assets', 'nodes', 'system_users']],
-        [this.$t('common.action'), ['actions']],
-        [this.$t('common.Other'), ['is_active', 'date_start', 'date_expired', 'comment']]
+        [this.$t('Basic'), ['name']],
+        [this.$t('User'), ['users', 'user_groups']],
+        [this.$t('Asset'), ['assets', 'nodes']],
+        [this.$t('Account'), ['accounts']],
+        [this.$t('Protocol'), ['protocols']],
+        [this.$t('Action'), ['actions']],
+        [this.$t('Other'), ['is_active', 'date_start', 'date_expired', 'comment']]
       ],
       url: '/api/v1/perms/asset-permissions/',
       createSuccessNextRoute: { name: 'AssetPermissionDetail' },
@@ -64,12 +67,17 @@ export default {
         assets: {
           type: 'assetSelect',
           component: AssetSelect,
-          label: this.$t('perms.Asset'),
           rules: [{
             required: false
           }],
           el: {
-            value: []
+            value: [],
+            defaultPageSize: 300,
+            baseUrl: '/api/v1/assets/assets/?fields_size=mini',
+            treeSetting: {
+              showSearch: false,
+              showRefresh: false
+            }
           }
         },
         nodes: {
@@ -83,41 +91,57 @@ export default {
             }
           }
         },
-        system_users: {
+        protocols: {
+          component: ProtocolsSelect,
           el: {
-            value: [],
-            ajax: {
-              url: '/api/v1/assets/system-users/?protocol__in=rdp,ssh,vnc,telnet',
-              transformOption: (item) => {
-                const username = item.username || '*'
-                return { label: item.name + '(' + username + ')', value: item.id }
+            resource: this.$t('Protocol'),
+            select2: {
+              url: '/api/v1/assets/protocols/',
+              ajax: {
+                transformOption: (item) => {
+                  return { label: item.label, value: item.value }
+                }
               }
             }
           }
         },
+        accounts: {
+          type: 'input',
+          component: AccountFormatter,
+          el: {
+            assets: [],
+            nodes: []
+          },
+          hidden: (formValue) => {
+            this.fieldsMeta.accounts.el.assets = formValue.assets
+            this.fieldsMeta.accounts.el.nodes = formValue.nodes
+          }
+        },
         actions: {
-          label: this.$t('perms.Actions'),
-          component: PermissionFormActionField,
-          helpText: this.$t('common.actionsTips')
+          label: this.$t('Action'),
+          helpText: this.$t('ActionsTips')
         },
-        date_start: {
-          label: this.$t('common.dateStart')
-        },
-        date_expired: {
-          label: this.$t('common.dateExpired')
-        },
-        comment: {
-          label: this.$t('common.Comment')
-        },
+        date_start: {},
+        date_expired: {},
+        comment: {},
         is_active: {
           type: 'checkbox'
         }
+      },
+      cleanFormValue(value) {
+        if (!Array.isArray(value.accounts)) {
+          value.accounts = value.accounts ? value.accounts.split(',') : []
+        }
+        return value
       }
     }
   }
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+::v-deep .el-tree {
+  padding: 5px 0;
+}
 
 </style>

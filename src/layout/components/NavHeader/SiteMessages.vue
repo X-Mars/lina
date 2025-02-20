@@ -1,78 +1,76 @@
 <template>
   <div>
-    <el-badge :value="unreadMsgCount" :hidden="unreadMsgCount === 0" :max="99" size="mini" type="primary">
+    <el-badge :hidden="unreadMsgCount === 0" :max="99" :value="unreadMsgCount" size="mini" type="primary">
       <el-link style="height: 100%" @click="toggleDrawer">
-        <svg-icon icon-class="email-fill" />
+        <svg-icon icon-class="remind" />
       </el-link>
     </el-badge>
     <el-drawer
-      class="drawer"
-      :visible.sync="show"
       :before-close="handleClose"
       :modal="false"
-      :title="$t('notifications.SiteMessage')"
-      custom-class="site-msg"
       :size="width"
+      :title="$tc('SiteMessage')"
+      :visible.sync="show"
+      class="drawer"
+      custom-class="site-msg"
       @open="getMessages"
     >
       <div slot="title">
-        <span>{{ $t('notifications.SiteMessage') }}</span>
+        <span>{{ $t('SiteMessage') }}</span>
         <div v-if="unreadMsgCount !== 0" class="msg-list-all-read-btn" @click.stop="oneClickRead(messages)">
-          <a style="vertical-align: sub;"> {{ $t('notifications.AllClickRead') }}</a>
+          <a style="vertical-align: sub;"> {{ $t('AllClickRead') }}</a>
         </div>
       </div>
       <div v-if="unreadMsgCount !== 0" class="msg-list">
         <div
           v-for="msg of messages"
           :key="msg.id"
-          class="msg-item"
           :class="msg['has_read'] ? 'msg-read' : 'msg-unread'"
-          @mouseover="hoverMsgId = msg.id"
-          @mouseleave="hoverMsgId = ''"
+          class="msg-item"
           @click="showMsgDetail(msg)"
+          @mouseleave="hoverMsgId = ''"
+          @mouseover="hoverMsgId = msg.id"
         >
           <el-row :gutter="10" class="msg-item-head">
             <el-col :span="15" class="msg-item-head-type">
               <i :class="msg['has_read'] ? 'fa-envelope-open-o' : 'fa-envelope'" class="fa msg-icon" />
-              {{ msg.subject }}
+              {{ msg.content.subject }}
             </el-col>
             <el-col :span="9">
               <span v-if="hoverMsgId !== msg.id || msg['has_read']" class="msg-item-head-time">
                 {{ formatDate(msg.date_created) }}
               </span>
               <span v-else class="msg-item-read-btn" @click.stop="markAsRead([msg])">
-                <a>{{ $t('notifications.MarkAsRead') }}</a>
+                <a>{{ $t('MarkAsRead') }}</a>
               </span>
             </el-col>
           </el-row>
           <div class="msg-item-txt">
-            <span v-html="msg.message" />
+            <span v-sanitize="msg.content.message" />
           </div>
         </div>
       </div>
       <div v-else class="no-msg">
-        {{ $t('notifications.NoUnreadMsg') }}
+        {{ $t('NoUnreadMsg') }}
       </div>
     </el-drawer>
 
     <Dialog
       v-if="msgDetailVisible"
-      :visible.sync="msgDetailVisible"
-      :title="''"
       :close-on-click-modal="false"
-      :confirm-title="$t('notifications.MarkAsRead')"
-      @confirm="markAsRead([currentMsg])"
+      :confirm-title="$tc('MarkAsRead')"
+      :title="currentMsg.content.subject"
+      :visible.sync="msgDetailVisible"
       @cancel="cancelRead"
+      @close="markAsRead([currentMsg])"
+      @confirm="markAsRead([currentMsg])"
     >
       <div class="msg-detail">
         <div class="msg-detail-head">
-          <h3>{{ currentMsg.subject }}</h3>
-          <h5>
-            <span class="msg-detail-time">{{ formatDate(currentMsg.date_created) }}</span>
-          </h5>
+          <span class="msg-detail-time">{{ formatDate(currentMsg.date_created) }}</span>
         </div>
         <div class="msg-detail-txt">
-          <span v-html="currentMsg.message" />
+          <MarkDown :value="currentMsg.content.message" />
         </div>
       </div>
     </Dialog>
@@ -80,12 +78,16 @@
 </template>
 
 <script>
-import { toSafeLocalDateStr } from '@/utils/common'
+import { toSafeLocalDateStr } from '@/utils/time'
 import Dialog from '@/components/Dialog'
+import MarkDown from '@/components/Widgets/MarkDown'
 
 export default {
   name: 'SiteMessages',
-  components: { Dialog },
+  components: {
+    Dialog,
+    MarkDown
+  },
   data() {
     return {
       show: false,
@@ -116,7 +118,7 @@ export default {
       this.msgDetailVisible = true
     },
     getMessages() {
-      const url = '/api/v1/notifications/site-message/?offset=0&limit=15&has_read=false'
+      const url = '/api/v1/notifications/site-messages/?offset=0&limit=15&has_read=false'
       this.$axios.get(url).then(resp => {
         this.messages = [...resp.results]
         this.unreadMsgCount = resp.count
@@ -135,7 +137,7 @@ export default {
       }
     },
     oneClickRead(msgs) {
-      this.$confirm(this.$t('notifications.OneClickReadMsg'), this.$t('common.Info'), {
+      this.$confirm(this.$tc('OneClickReadMsg'), this.$tc('Info'), {
         type: 'warning',
         confirmButtonClass: 'el-button--danger',
         beforeClose: async(action, instance, done) => {
@@ -148,7 +150,7 @@ export default {
       })
     },
     markAsReadAll(msgs) {
-      const url = `/api/v1/notifications/site-message/mark-as-read-all/`
+      const url = `/api/v1/notifications/site-messages/mark-as-read-all/`
       this.$axios.patch(url, {}).then(res => {
         this.msgDetailVisible = false
         this.getMessages()
@@ -157,7 +159,7 @@ export default {
       })
     },
     markAsRead(msgs) {
-      const url = `/api/v1/notifications/site-message/mark-as-read/`
+      const url = `/api/v1/notifications/site-messages/mark-as-read/`
       const msgIds = []
       for (const item of msgs) {
         msgIds.push(item.id)
@@ -195,7 +197,7 @@ export default {
         }
       }
       ws.onerror = (error) => {
-        this.$message.error(this.$t('common.ConnectWebSocketError'))
+        this.$message.error(this.$tc('ConnectWebSocketError'))
         this.$log.debug('site message ws error: ', error)
       }
     }
@@ -205,22 +207,24 @@ export default {
 
 <style lang="scss" scoped>
 .drawer {
-  height: calc(100% - 40px);
+  height: calc(100% - 0px);
 }
-.el-badge ::v-deep .el-badge__content.is-fixed{
-  top:10px;
+
+.el-badge ::v-deep .el-badge__content.is-fixed {
+  top: 10px;
 }
 
 .msg-list {
   padding: 0 25px 20px;
 }
 
->>> .site-msg {
+::v-deep .site-msg {
   .el-drawer__header {
     border-bottom: solid 1px rgb(231, 234, 239);
     margin-bottom: 0;
     padding-top: 10px;
     font-size: 16px;
+
     .msg-list-all-read-btn {
       font-size: 12px;
       float: right;
@@ -247,8 +251,9 @@ export default {
   }
 
   .msg-icon {
-    font-size: 13px;
+    font-size: 13px !important;
     line-height: 13px;
+    color: gray !important;
   }
 
   &.msg-unread {
@@ -262,6 +267,7 @@ export default {
   line-height: 20px;
   color: #888;
   font-size: 12px;
+
   &:after {
     clear: both;
     content: ".";
@@ -278,9 +284,11 @@ export default {
     vertical-align: middle;
     white-space: nowrap;
   }
+
   .msg-item-head-time {
     float: right;
   }
+
   .msg-item-read-btn {
     float: right;
   }
@@ -295,22 +303,116 @@ export default {
   display: -webkit-box;
   font-size: 12px;
   display: block;
+
+  ::v-deep .ticket-container {
+    .title {
+      font-size: 12px;
+    }
+  }
+
 }
 
 .msg-detail {
-  padding-left: 20px;
 
   .msg-detail-time {
     font-weight: 400;
-    font-size: 12px;
     line-height: 1.1;
+    float: right;
+    color: var(--N600, #646A73);
+    text-align: right;
+    font-feature-settings: 'clig' off, 'liga' off;
+    font-size: 14px;
+    font-style: normal;
   }
 
   .msg-detail-txt {
-    margin-bottom: 20px;
-    line-height: 25px;
-    &>>> a {
-      color: var(--color-success)!important;
+    line-height: 24px;
+
+    .el-dialog__title {
+      color: var(--neutral-900, #1F2329);
+      font-size: 16px;
+      font-style: normal;
+      font-weight: 500;
+      line-height: 24px;
+    }
+
+    & ::v-deep a {
+      color: var(--color-success) !important;
+    }
+
+    ::v-deep .ticket-container {
+      height: 618px;
+      flex-shrink: 0;
+      border-radius: 4px;
+      background: #FFF;
+      font-style: normal;
+      font-weight: 400;
+      line-height: 24px; /* 150% */
+
+      .title {
+        margin-bottom: 8px;
+        color: var(--neutral-900, #1F2329);
+        font-size: 16px;
+        font-weight: 500;
+      }
+
+      .card {
+        .child_title {
+          padding-top: 16px;
+          margin: 0 0 12px 16px;
+          display: inline-flex;
+          flex-direction: column;
+          align-items: flex-start;
+          color: var(--neutral-900, #1F2329);
+          font-size: 16px;
+          font-style: normal;
+          font-weight: 500;
+        }
+
+        margin-top: 16px;
+        width: 100%;
+        display: inline-block;
+        border-radius: 4px;
+        background: var(--N100, #F5F6F7);
+      }
+
+      .action_group {
+        margin-top: 8px;
+
+        .view-link {
+          color: #3370FF !important;
+          text-align: right;
+          font-size: 14px;
+          border-radius: 4px;
+
+          &:hover {
+            background: rgba(51, 112, 255, 0.20);
+            display: inline-block;
+            border-radius: 4px;
+          }
+        }
+      }
+
+      .field-group {
+        font-size: 14px;
+        padding-inline-start: 0;
+        margin: 0;
+
+        .field-name {
+          margin: 4px 0 4px 16px;
+          color: var(--N600, #646A73);
+          display: inline-block;
+
+          strong {
+            font-weight: 400 !important;
+          }
+        }
+
+        .field-value {
+          color: var(--N900, #1F2329);
+          display: inline-block;
+        }
+      }
     }
   }
 }
@@ -320,5 +422,7 @@ export default {
   text-align: center;
 }
 
->>> :focus{ outline:0; }
+::v-deep :focus {
+  outline: 0;
+}
 </style>

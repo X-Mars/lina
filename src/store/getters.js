@@ -1,5 +1,6 @@
 const getters = {
   sidebar: state => state.app.sidebar,
+  defaultOpensMenu: state => state.app.defaultOpensMenu,
   device: state => state.app.device,
   inited: state => state.app.inited,
   isMobile: state => state.app.device === 'mobile',
@@ -10,6 +11,7 @@ const getters = {
   noRootWorkbenchOrgs: state => state.users.noRootWorkbenchOrgs,
   usingOrgs: state => state.users.usingOrgs,
   currentOrg: state => state.users.currentOrg,
+  preOrg: state => state.users.preOrg,
   currentOrgIsDefault: state => state.users.currentOrg['is_default'],
   currentOrgIsRoot: state => {
     return state.users.currentOrg && state.users.currentOrg['is_root']
@@ -26,6 +28,9 @@ const getters = {
   tableConfig: state => state.table.tableConfig,
   currentUserIsSuperAdmin: state => state.users.isSuperAdmin,
   currentUserIsAdmin: state => state.users.isAdmin,
-  hasValidLicense: state => state.settings.hasValidLicense
+  hasValidLicense: state => state.settings.hasValidLicense,
+  isSystemAdmin: state => state.users.profile.system_roles.some(i => (i?.id === '00000000-0000-0000-0000-000000000001')),
+  sqlQueryCounter: state => state.common.sqlQueryCounter,
+  showSqlQueryCounter: state => state.common.showSqlQueryCounter
 }
 export default getters

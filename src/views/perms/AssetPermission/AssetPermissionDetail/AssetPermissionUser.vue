@@ -1,19 +1,19 @@
 <template>
   <el-row :gutter="20">
-    <el-col :md="14" :sm="24">
-      <ListTable ref="ListTable" :table-config="tableConfig" :header-actions="headerActions" />
+    <el-col :md="15" :sm="24">
+      <ListTable ref="ListTable" :header-actions="headerActions" :table-config="tableConfig" />
     </el-col>
-    <el-col :md="10" :sm="24">
+    <el-col :md="9" :sm="24">
       <RelationCard type="primary" v-bind="userRelationConfig" />
-      <RelationCard type="info" style="margin-top: 15px" v-bind="groupRelationConfig" />
+      <RelationCard style="margin-top: 15px" type="info" v-bind="groupRelationConfig" />
     </el-col>
   </el-row>
 </template>
 
 <script>
-import ListTable from '@/components/ListTable'
-import RelationCard from '@/components/RelationCard'
-import { DeleteActionFormatter } from '@/components/TableFormatters'
+import ListTable from '@/components/Table/ListTable'
+import RelationCard from '@/components/Cards/RelationCard'
+import { DeleteActionFormatter } from '@/components/Table/TableFormatters'
 
 export default {
   name: 'AssetPermissionUser',
@@ -30,23 +30,37 @@ export default {
   data() {
     return {
       tableConfig: {
-        url: `/api/v1/perms/asset-permissions/${this.object.id}/users/all/`,
-        columns: [
-          'user_display', 'delete_action'
-        ],
+        url: '',
+        id: 'user',
+        columnsExclude: ['user'],
+        columnsExtra: ['delete_action'],
+        columnsShow: {
+          min: ['user_display', 'delete_action']
+        },
         columnsMeta: {
           user_display: {
-            label: this.$t('perms.User'),
+            label: this.$t('User'),
             align: 'center'
           },
           delete_action: {
             prop: 'user',
-            label: this.$t('common.Actions'),
+            label: this.$t('Actions'),
             align: 'center',
             width: 150,
             objects: this.object.users,
             formatter: DeleteActionFormatter,
-            deleteUrl: `/api/v1/perms/asset-permissions-users-relations/?assetpermission=${this.object.id}&user=`
+            onDelete: function(col, row, cellValue, reload) {
+              const url = `/api/v1/perms/asset-permissions-users-relations/?assetpermission=${this.object.id}&user=${cellValue}`
+              this.$axios.delete(url).then(res => {
+                this.$message.success(this.$tc('DeleteSuccessMsg'))
+                this.$store.commit('common/reload')
+              }).catch(error => {
+                this.$message.error(this.$tc('DeleteErrorMsg') + ' ' + error)
+              })
+            }.bind(this)
+          },
+          actions: {
+            has: false
           }
         },
         tableAttrs: {
@@ -63,7 +77,7 @@ export default {
       },
       userRelationConfig: {
         icon: 'fa-user',
-        title: this.$t('perms.addUserToThisPermission'),
+        title: this.$t('AddUserToThisPermission'),
         objectsAjax: {
           url: '/api/v1/users/users/?fields_size=mini&order=name',
           transformOption: (item) => {
@@ -71,7 +85,7 @@ export default {
           }
         },
         showHasMore: false,
-        hasObjectsId: this.object.users,
+        hasObjectsId: this.object.users?.map(i => i.id) || [],
         showHasObjects: false,
         performAdd: (items) => {
           const relationUrl = `/api/v1/perms/asset-permissions-users-relations/`
@@ -87,18 +101,16 @@ export default {
         onAddSuccess: (objects, that) => {
           this.$log.debug('Select value', that.select2.value)
           that.iHasObjects = [...that.iHasObjects, ...objects]
-          that.$refs.select2.clearSelected()
-          this.$message.success(this.$t('common.updateSuccessMsg'))
-          this.$refs.ListTable.reloadTable()
+          this.$store.commit('common/reload')
         }
       },
       groupRelationConfig: {
         icon: 'fa-group',
-        title: this.$t('perms.addUserGroupToThisPermission'),
+        title: this.$t('AddUserGroupToThisPermission'),
         objectsAjax: {
           url: '/api/v1/users/groups/'
         },
-        hasObjectsId: this.object.user_groups,
+        hasObjectsId: this.object.user_groups?.map(i => i.id) || [],
         performAdd: (items) => {
           const relationUrl = `/api/v1/perms/asset-permissions-user-groups-relations/`
           const objectId = this.object.id
@@ -117,10 +129,9 @@ export default {
           return this.$axios.delete(relationUrl)
         },
         onAddSuccess: (objects, that) => {
-          this.$log.debug('Select value', that.select2.value)
           that.iHasObjects = [...that.iHasObjects, ...objects]
           that.$refs.select2.clearSelected()
-          this.$message.success(this.$t('common.updateSuccessMsg'))
+          this.$message.success(this.$tc('UpdateSuccessMsg'))
           this.$refs.ListTable.reloadTable()
         },
         onDeleteSuccess: (obj, that) => {
@@ -131,15 +142,31 @@ export default {
             this.$log.debug('disabled values remove index: ', i)
             that.select2.disabledValues.splice(i, 1)
           }
-          this.$message.success(this.$t('common.deleteSuccessMsg'))
+          this.$message.success(this.$tc('DeleteSuccessMsg'))
           this.$refs.ListTable.reloadTable()
         }
+      }
+    }
+  },
+  watch: {
+    object: {
+      handler(newVal) {
+        this.updateTableConfigUrl(newVal.id)
+      },
+      immediate: true,
+      deep: true
+    }
+  },
+  mounted() {
+    this.updateTableConfigUrl(this.$route.params.id)
+  },
+  methods: {
+    // 对于 url 中的 id 值有可能会捕获到上一个页面路由对象中的 id 值，因此会导致权限报错
+    updateTableConfigUrl(id) {
+      if (id) {
+        this.tableConfig.url = `/api/v1/perms/asset-permissions/${id}/users/all/`
       }
     }
   }
 }
 </script>
-
-<style scoped>
-
-</style>

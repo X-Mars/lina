@@ -1,22 +1,35 @@
 <template>
-  <el-dialog
-    :title="title"
-    :top="top"
-    :width="iWidth"
-    class="dialog"
-    v-bind="$attrs"
-    :append-to-body="false"
-    :modal-append-to-body="false"
-    v-on="$listeners"
-  >
-    <slot />
-    <div slot="footer" class="dialog-footer">
-      <slot name="footer">
-        <el-button v-if="showCancel" size="small" @click="onCancel">{{ cancelTitle }}</el-button>
-        <el-button v-if="showConfirm" type="primary" size="small" :loading="loadingStatus" @click="onConfirm">{{ confirmTitle }}</el-button>
-      </slot>
-    </div>
-  </el-dialog>
+  <transition name="dialog-fade">
+    <el-dialog
+      :append-to-body="true"
+      :modal-append-to-body="true"
+      :title="title"
+      :top="top"
+      :width="iWidth"
+      class="dialog"
+      v-bind="$attrs"
+      v-on="$listeners"
+    >
+      <div v-loading="disabledStatus">
+        <slot />
+      </div>
+
+      <div v-if="showButtons" slot="footer" class="dialog-footer">
+        <slot name="footer">
+          <el-button v-if="showCancel && showButtons" size="small" @click="onCancel">{{ cancelTitle }}</el-button>
+          <el-button
+            v-if="showConfirm && showButtons"
+            :disabled="disabledStatus"
+            size="small"
+            type="primary"
+            @click="onConfirm"
+          >
+            {{ confirmTitle }}
+          </el-button>
+        </slot>
+      </div>
+    </el-dialog>
+  </transition>
 </template>
 
 <script>
@@ -26,16 +39,6 @@ export default {
     title: {
       type: String,
       default: 'Title'
-    },
-    showCancel: {
-      type: Boolean,
-      default: true
-    },
-    cancelTitle: {
-      type: String,
-      default() {
-        return this.$t('common.Cancel')
-      }
     },
     top: {
       type: String,
@@ -49,15 +52,33 @@ export default {
       type: Boolean,
       default: true
     },
-    loadingStatus: {
-      type: Boolean,
-      default: false
-    },
     confirmTitle: {
       type: String,
       default() {
-        return this.$t('common.Confirm')
+        return this.$t('Confirm')
       }
+    },
+    showCancel: {
+      type: Boolean,
+      default: true
+    },
+    cancelTitle: {
+      type: String,
+      default() {
+        return this.$t('Cancel')
+      }
+    },
+    showButtons: {
+      type: Boolean,
+      default: true
+    },
+    disabledStatus: {
+      type: Boolean,
+      default: false
+    },
+    maxWidth: {
+      type: String,
+      default: '1200px'
     }
   },
   data() {
@@ -66,7 +87,7 @@ export default {
   },
   computed: {
     iWidth() {
-      return this.$store.getters.isMobile ? '80%' : this.width
+      return this.$store.getters.isMobile ? '1000px' : this.width
     }
   },
   methods: {
@@ -81,12 +102,59 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  .dialog >>> .el-dialog__header {
-    /*padding-top: 10px;*/
+  .dialog ::v-deep .el-dialog {
+    border-radius: 0.3em;
+    max-width: min(100vw, 1500px);
+
+    .form-group-header {
+      margin-left: 20px;
+    }
+
+    .el-icon-circle-check {
+      display: none;
+    }
+
+    &__header {
+      box-sizing: border-box;
+      padding: 15px 22px;
+      border-bottom: 1px solid #dee2e6;
+      font-weight: 400;
+    }
+
+    &__body {
+      padding: 20px 30px;
+      font-size: 13px;
+
+      &:has(.el-table) {
+        background: #f3f3f4;
+      }
+    }
+
+    &__footer {
+      border-top: 1px solid #dee2e6;
+      padding: 16px 25px;
+      justify-content: flex-end;
+    }
   }
 
-  .dialog-footer {
-    padding-right: 20px;
+  @media (max-width: 900px) {
+    .dialog ::v-deep .el-dialog {
+      max-width: calc(100% - 30px);
+    }
+  }
+
+  .dialog-footer ::v-deep button.el-button {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  .dialog-fade-enter-active, .dialog-fade-leave-active {
+    transition: opacity 1s ease;
+  }
+
+  .dialog-fade-enter, .dialog-fade-leave-to /* .dialog-fade-leave-active 在 <2.1.8 中以及被重复声明 */
+  {
+    opacity: 0;
   }
 
 </style>

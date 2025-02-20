@@ -2,21 +2,23 @@
   <AutoDataForm
     v-if="!loading"
     ref="form"
-    :method="method"
     :form="form"
-    :url="iUrl"
-    :has-save-continue="iHasSaveContinue"
     :has-reset="iHasReset"
+    :has-save-continue="iHasSaveContinue"
     :is-submitting="isSubmitting"
+    :method="method"
+    :url="iUrl"
     v-bind="$attrs"
-    v-on="$listeners"
+    @afterRemoteMeta="handleAfterRemoteMeta"
     @submit="handleSubmit"
+    v-on="$listeners"
   />
 </template>
 <script>
-import AutoDataForm from '@/components/AutoDataForm'
+import AutoDataForm from '@/components/Form/AutoDataForm'
 import { getUpdateObjURL } from '@/utils/common'
 import { encryptPassword } from '@/utils/crypto'
+import deepmerge from 'deepmerge'
 
 export default {
   name: 'GenericCreateUpdateForm',
@@ -48,6 +50,11 @@ export default {
       type: Function,
       default: (value) => value
     },
+    // 获取 meta
+    afterGetRemoteMeta: {
+      type: Function,
+      default: null
+    },
     // 当提交的时候，怎么处理
     onSubmit: {
       type: Function,
@@ -68,21 +75,21 @@ export default {
     createSuccessMsg: {
       type: String,
       default: function() {
-        return this.$t('common.createSuccessMsg')
+        return this.$t('CreateSuccessMsg')
       }
     },
     // 保存成功，继续添加的msg
     saveSuccessContinueMsg: {
       type: String,
       default: function() {
-        return this.$t('common.saveSuccessContinueMsg')
+        return this.$t('SaveSuccessContinueMsg')
       }
     },
     // 更新成功的msg
     updateSuccessMsg: {
       type: String,
       default: function() {
-        return this.$t('common.updateSuccessMsg')
+        return this.$t('UpdateSuccessMsg')
       }
     },
     // 创建成功的跳转路由
@@ -116,9 +123,15 @@ export default {
         return method === 'post' ? this.createSuccessNextRoute : this.updateSuccessNextRoute
       }
     },
+    cloneNameSuffix: {
+      type: String,
+      default: function() {
+        return this.$t('Duplicate').toLowerCase()
+      }
+    },
     // 获取提交的方法
     submitMethod: {
-      type: Function,
+      type: [Function, String],
       default: function() {
         const params = this.$route.params
         if (params.id) {
@@ -150,6 +163,10 @@ export default {
         return url
       }
     },
+    extraQueryOrder: {
+      type: String,
+      default: '-date_updated'
+    },
     emitPerformSuccessMsg: {
       type: Function,
       default(method, res, addContinue) {
@@ -160,27 +177,21 @@ export default {
         let msgLinkName = ''
         if (res.name) {
           msgLinkName = res.name
-        } else if (res.hostname) {
-          msgLinkName = res.hostname
         }
         const h = this.$createElement
         const detailRoute = this.objectDetailRoute
         detailRoute.params = { id: res.id }
         if (this.hasDetailInMsg) {
+          msg = msg[0].toLowerCase() + msg.slice(1)
           this.$message({
             message: h('p', null, [
               h('el-link', {
                 on: {
                   click: () => this.$router.push(detailRoute)
                 },
-                style: { 'vertical-align': 'top' }
+                style: { 'vertical-align': 'top', 'margin-right': '5px' }
               }, msgLinkName),
-              h('span', { style: {
-                'padding-left': '5px',
-                'height': '18px',
-                'line-height': '18px',
-                'font-size': '13.5px',
-                'font-weight': ' 400' }}, msg)
+              h('span', {}, msg)
             ]),
             type: 'success'
           })
@@ -193,31 +204,44 @@ export default {
       type: Function,
       default(res, method, vm, addContinue) {
         const route = this.getNextRoute(res, method)
+
         if (!(route.params && route.params.id)) {
-          route['params'] = Object.assign(route['params'] || {}, { 'id': res.id })
+          route['params'] = deepmerge(route['params'] || {}, { 'id': res.id })
         }
+        route['query'] = deepmerge(route['query'], { 'order': this.extraQueryOrder, 'updated': new Date().getTime() })
+
         this.$emit('submitSuccess', res)
 
         this.emitPerformSuccessMsg(method, res, addContinue)
         if (!addContinue) {
-          setTimeout(() => this.$router.push(route), 100)
+          if (this.$router.currentRoute.name !== route?.name) {
+            setTimeout(() => this.$router.push(route), 100)
+          }
         }
       }
     },
     onPerformError: {
       type: Function,
       default(error, method, vm) {
-        this.$log.error('error: ', error)
-        this.$emit('submitError', error)
         const response = error.response
         const data = response.data
         if (response.status === 400) {
           for (const key of Object.keys(data)) {
-            let value = data[key]
-            if (value instanceof Array) {
-              value = value.join(';')
+            let err = ''
+            let errorTips = data[key]
+            if (errorTips instanceof Array) {
+              errorTips = _.filter(errorTips, (item) => Object.keys(item).length > 0)
+              for (const i of errorTips) {
+                if (i instanceof Object) {
+                  err += i?.port?.join(',')
+                } else {
+                  err += i
+                }
+              }
+            } else {
+              err = errorTips
             }
-            this.$refs.form.setFieldError(key, value)
+            this.$refs.form.setFieldError(key, err)
           }
         }
       }
@@ -249,7 +273,11 @@ export default {
   },
   computed: {
     method() {
-      return this.submitMethod(this)
+      if (this.submitMethod instanceof Function) {
+        return this.submitMethod(this)
+      } else {
+        return this.submitMethod
+      }
     },
     iUrl() {
       // 更新或创建的url
@@ -300,6 +328,11 @@ export default {
       }
       return values
     },
+    handleAfterRemoteMeta(meta) {
+      if (this.afterGetRemoteMeta) {
+        return this.afterGetRemoteMeta(meta)
+      }
+    },
     handleSubmit(values, formName, addContinue) {
       let handler = this.onSubmit || this.defaultOnSubmit
       handler = handler.bind(this)
@@ -312,7 +345,12 @@ export default {
       this.performSubmit(validValues)
         .then((res) => this.onPerformSuccess.bind(this)(res, this.method, this, addContinue))
         .catch((error) => this.onPerformError(error, this.method, this))
-        .finally(() => { this.isSubmitting = false })
+        .finally(() => {
+          setTimeout(() => {
+            this.isSubmitting = false
+            this.$emit('performFinished')
+          }, 200)
+        })
     },
     async getFormValue() {
       const cloneFrom = this.$route.query['clone_from']
@@ -325,11 +363,16 @@ export default {
           const [curUrl, query] = this.url.split('?')
           const url = `${curUrl}${cloneFrom}/${query ? ('?' + query) : ''}`
           object = await this.getObjectDetail(url)
+          let name = ''
+          let attr = ''
           if (object['name']) {
-            object.name = this.$t('common.cloneFrom') + ' ' + object.name
+            name = object['name']
+            attr = 'name'
           } else if (object['hostname']) {
-            object.hostname = this.$t('common.cloneFrom') + ' ' + object.hostname
+            name = object['hostname']
+            attr = 'hostname'
           }
+          object[attr] = name + '-' + this.cloneNameSuffix
         } else {
           object = await this.getObjectDetail(this.iUrl)
         }
@@ -350,8 +393,7 @@ export default {
 </script>
 
 <style scoped>
-  .ibox >>> .el-card__body {
+  .ibox ::v-deep .el-card__body {
     padding-top: 30px;
   }
-
 </style>

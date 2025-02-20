@@ -3,7 +3,7 @@
     <template #header>
       <slot name="header">
         <div v-if="title" slot="header" class="clearfix ibox-title">
-          <i v-if="fa" :class="'fa ' + fa" /> {{ title }}
+          <i v-if="fa" :class="'fa ' + fa" /> <h5>{{ title }}</h5>
         </div>
       </slot>
     </template>
@@ -36,15 +36,14 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang='scss' scoped>
   .ibox {
     /*height: 100%;*/
     clear: both;
     padding: 0;
-    background-color: #ffffff;
   }
 
-  .ibox >>> .el-card__header {
+  .ibox ::v-deep .el-card__header {
     border-color: #e7eaec;
     border-image: none;
     margin-bottom: 0;
@@ -56,11 +55,11 @@ export default {
 
   .ibox-title h5 {
     display: inline-block;
-    font-size: 14px;
+    font-size: 13px;
     margin: 0;
     padding: 0;
     text-overflow: ellipsis;
-    float: left;
+    font-weight: 500;
   }
 
   .ibox-tools a {
@@ -82,9 +81,8 @@ export default {
     font-size: 14px;
   }
 
-  .ibox >>> .el-card__body {
-    background-color: #ffffff;
-    padding: 15px 20px 20px 20px;
-    color: inherit;
+  .ibox ::v-deep .el-card__body {
+    //padding: 30px 30px 20px 30px; // 这个设置会影响详情中的 quick update 和 relations
+    color: var(--color-icon-primary);
   }
 </style>

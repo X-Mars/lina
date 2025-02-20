@@ -47,16 +47,21 @@ module.exports = {
       // change xxx-api/login => mock/login
       // detail: https://cli.vuejs.org/config/#devserver-proxy
       '/api/': {
-        target: process.env.VUE_APP_CORE_HOST,
+        target: process.env.VUE_APP_CORE_HOST || 'http://127.0.0.1:8080',
         changeOrigin: true
       },
       '/ws/': {
-        target: process.env.VUE_APP_CORE_WS,
+        target: process.env.VUE_APP_CORE_WS || 'ws://127.0.0.1:8080',
         changeOrigin: true,
         ws: true
       },
       '/koko/': {
-        target: 'http://127.0.0.1:5000',
+        target: process.env.VUE_APP_KOKO_HOST || 'http://127.0.0.1:5000',
+        changeOrigin: true,
+        ws: true
+      },
+      '/chen/': {
+        target: 'http://127.0.0.1:9523',
         changeOrigin: true,
         ws: true
       },
@@ -66,18 +71,22 @@ module.exports = {
         ws: true
       },
       '/luna/': {
-        target: 'http://127.0.0.1:4200/luna/',
+        target: 'http://127.0.0.1:4200',
         changeOrigin: true
       },
+      '/facelive/': {
+        target: 'http://localhost:9999',
+        changeOrigin: true,
+        ws: true
+      },
       '^/(core|static|media)/': {
-        target: process.env.VUE_APP_CORE_HOST,
+        target: process.env.VUE_APP_CORE_HOST || 'http://127.0.0.1:8080',
         changeOrigin: true
       }
     },
     after: require('./mock/mock-server.js')
   },
-  css: {
-  },
+  css: {},
   configureWebpack: {
     // provide the app's title in webpack's name field, so that
     // it can be accessed in index.html to inject the correct title.
@@ -85,7 +94,8 @@ module.exports = {
     resolve: {
       alias: {
         '@': resolve('src'),
-        elementCss: resolve('node_modules/element-ui/lib/theme-chalk/index.css'),
+        elementCss: resolve(
+          'node_modules/element-ui/lib/theme-chalk/index.css'),
         elementLocale: resolve('node_modules/element-ui/lib/locale/lang/en.js')
       },
       extensions: ['.vue', '.js', '.json']
@@ -130,12 +140,20 @@ module.exports = {
       .loader('vue-loader')
       .tap(options => {
         options.compilerOptions.preserveWhitespace = true
+        options.compilerOptions.directives = {
+          html(node, directiveMeta) {
+            (node.props || (node.props = [])).push({
+              name: 'innerHTML',
+              value: `$xss.process(_s(${directiveMeta.value}))`
+            })
+          }
+        }
         return options
       })
       .end()
 
     config
-    // https://webpack.js.org/configuration/devtool/#development
+      // https://webpack.js.org/configuration/devtool/#development
       .when(process.env.NODE_ENV === 'development',
         config => config.devtool('cheap-source-map')
       )
@@ -146,10 +164,11 @@ module.exports = {
           config
             .plugin('ScriptExtHtmlWebpackPlugin')
             .after('html')
-            .use('script-ext-html-webpack-plugin', [{
-            // `runtime` must same as runtimeChunk name. default is `runtime`
-              inline: /runtime\..*\.js$/
-            }])
+            .use('script-ext-html-webpack-plugin', [
+              {
+                // `runtime` must same as runtimeChunk name. default is `runtime`
+                inline: /runtime\..*\.js$/
+              }])
             .end()
           config
             .optimization.splitChunks({

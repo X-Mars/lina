@@ -6,79 +6,259 @@ export default [
   {
     path: 'assets',
     component: empty,
-    redirect: '',
-    meta: { title: i18n.t('route.AssetList'), permissions: ['assets.view_asset'] },
+    redirect: {
+      name: 'AssetList'
+    },
+    meta: {
+      title: i18n.t('BaseAssetList'),
+      app: 'assets',
+      resource: 'asset',
+      icon: 'assets'
+    },
     children: [
       {
         path: '',
         name: 'AssetList',
-        component: () => import('@/views/assets/Asset/AssetList.vue'),
-        meta: { title: i18n.t('route.AssetList') }
-      },
-      {
-        path: 'create',
-        name: 'AssetCreate',
-        component: () => import('@/views/assets/Asset/AssetCreateUpdate.vue'),
-        hidden: true,
-        meta: { title: i18n.t('route.AssetCreate') }
+        component: () => import('@/views/assets/Asset/AssetList/index.vue'),
+        meta: { title: i18n.t('AssetList') }
       },
       {
         path: ':id',
         name: 'AssetDetail',
         component: () => import('@/views/assets/Asset/AssetDetail'),
         hidden: true,
-        meta: { title: i18n.t('route.AssetDetail') }
-      },
-      {
-        path: ':id/update',
-        name: 'AssetUpdate',
-        component: () => import('@/views/assets/Asset/AssetCreateUpdate.vue'),
-        hidden: true,
-        meta: { title: i18n.t('route.AssetUpdate') }
+        meta: { title: i18n.t('AssetDetail') }
       },
       {
         path: 'detail/:id/update',
         name: 'AssetMoreInformationEdit',
         component: () => import('@/views/assets/Asset/AssetMoreInformationEdit.vue'),
         hidden: true,
-        meta: { title: i18n.t('common.UpdateAssetDetail'), action: 'update' }
+        meta: { title: i18n.t('UpdateAssetDetail'), action: 'update' }
       }
     ]
   },
   {
-    path: 'domains',
+    path: 'hosts',
+    component: empty,
+    redirect: '',
+    hidden: true,
+    meta: {
+      title: i18n.t('HostList'),
+      app: 'assets',
+      resource: 'asset'
+    },
+    children: [
+      {
+        path: 'create',
+        name: 'HostCreate',
+        component: () => import('@/views/assets/Asset/AssetCreateUpdate/HostCreateUpdate.vue'),
+        hidden: true,
+        meta: { title: i18n.t('HostCreate'), activeMenu: '/console/assets/assets' }
+      },
+      {
+        path: ':id/update',
+        name: 'HostUpdate',
+        component: () => import('@/views/assets/Asset/AssetCreateUpdate/HostCreateUpdate.vue'),
+        hidden: true,
+        meta: { title: i18n.t('HostUpdate'), activeMenu: '/console/assets/assets' }
+      }
+    ]
+  },
+  {
+    path: 'databases',
+    component: empty,
+    redirect: '',
+    hidden: true,
+    meta: {
+      title: i18n.t('Databases'),
+      app: 'assets',
+      resource: 'asset'
+    },
+    children: [
+      {
+        path: 'create',
+        name: 'DatabaseCreate',
+        component: () => import('@/views/assets/Asset/AssetCreateUpdate/DatabaseCreateUpdate.vue'),
+        hidden: true,
+        meta: { title: i18n.t('DatabaseCreate'), activeMenu: '/console/assets/assets' }
+      },
+      {
+        path: ':id/update',
+        name: 'DatabaseUpdate',
+        component: () => import('@/views/assets/Asset/AssetCreateUpdate/DatabaseCreateUpdate.vue'),
+        hidden: true,
+        meta: { title: i18n.t('DatabaseUpdate'), activeMenu: '/console/assets/assets' }
+      }
+    ]
+  },
+  {
+    path: 'devices',
+    component: empty,
+    redirect: '',
+    hidden: true,
+    meta: {
+      title: i18n.t('devices'),
+      app: 'assets',
+      resource: 'asset'
+    },
+    children: [
+      {
+        path: 'create',
+        name: 'DeviceCreate',
+        component: () => import('@/views/assets/Asset/AssetCreateUpdate/DeviceCreateUpdate.vue'),
+        hidden: true,
+        meta: { title: i18n.t('DeviceCreate'), activeMenu: '/console/assets/assets' }
+      },
+      {
+        path: ':id/update',
+        name: 'DeviceUpdate',
+        component: () => import('@/views/assets/Asset/AssetCreateUpdate/DeviceCreateUpdate.vue'),
+        hidden: true,
+        meta: { title: i18n.t('DeviceUpdate'), activeMenu: '/console/assets/assets' }
+      }
+    ]
+  },
+  {
+    path: 'clouds',
+    component: empty,
+    redirect: '',
+    hidden: true,
+    meta: {
+      app: 'assets',
+      resource: 'asset'
+    },
+    children: [
+      {
+        path: 'create',
+        name: 'CloudCreate',
+        component: () => import('@/views/assets/Asset/AssetCreateUpdate/CloudsPlatformCreateUpdate.vue'),
+        hidden: true,
+        meta: { title: i18n.t('CloudCreate'), activeMenu: '/console/assets/assets' }
+      },
+      {
+        path: ':id/update',
+        name: 'CloudUpdate',
+        component: () => import('@/views/assets/Asset/AssetCreateUpdate/CloudsPlatformCreateUpdate.vue'),
+        hidden: true,
+        meta: { title: i18n.t('CloudUpdate'), activeMenu: '/console/assets/assets' }
+      }
+    ]
+  },
+  {
+    path: 'webs',
+    component: empty,
+    redirect: '',
+    hidden: true,
+    meta: {
+      app: 'assets',
+      resource: 'asset'
+    },
+    children: [
+      {
+        path: 'create',
+        name: 'WebCreate',
+        component: () => import('@/views/assets/Asset/AssetCreateUpdate/WebCreateUpdate.vue'),
+        hidden: true,
+        meta: { title: i18n.t('WebCreate'), activeMenu: '/console/assets/assets' }
+      },
+      {
+        path: ':id/update',
+        name: 'WebUpdate',
+        component: () => import('@/views/assets/Asset/AssetCreateUpdate/WebCreateUpdate.vue'),
+        hidden: true,
+        meta: { title: i18n.t('WebUpdate'), activeMenu: '/console/assets/assets' }
+      }
+    ]
+  },
+  {
+    path: 'gpts',
+    component: empty,
+    redirect: '',
+    hidden: true,
+    meta: {
+      title: i18n.t('gpts'),
+      app: 'assets',
+      resource: 'asset'
+    },
+    children: [
+      {
+        path: 'create',
+        name: 'GptCreate',
+        component: () => import('@/views/assets/Asset/AssetCreateUpdate/GPTCreateUpdate.vue'),
+        meta: { title: i18n.t('GPTCreate'), activeMenu: '/console/assets/assets' }
+      },
+      {
+        path: ':id/update',
+        name: 'GptUpdate',
+        component: () => import('@/views/assets/Asset/AssetCreateUpdate/GPTCreateUpdate.vue'),
+        meta: { title: i18n.t('GPTUpdate'), activeMenu: '/console/assets/assets' }
+      }
+    ]
+  },
+  {
+    path: 'customs',
+    component: empty,
+    redirect: '',
+    hidden: true,
+    meta: {
+      title: i18n.t('CustomAsset'),
+      app: 'assets',
+      resource: 'asset'
+    },
+    children: [
+      {
+        path: 'create',
+        name: 'CustomCreate',
+        component: () => import('@/views/assets/Asset/AssetCreateUpdate/CustomCreateUpdate.vue'),
+        hidden: true,
+        meta: { title: i18n.t('CustomCreate'), activeMenu: '/console/assets/assets' }
+      },
+      {
+        path: ':id/update',
+        name: 'CustomUpdate',
+        component: () => import('@/views/assets/Asset/AssetCreateUpdate/CustomCreateUpdate.vue'),
+        hidden: true,
+        meta: { title: i18n.t('CustomUpdate'), activeMenu: '/console/assets/assets' }
+      }
+    ]
+  },
+  {
+    path: 'zones',
     component: empty,
     redirect: '',
     meta: {
+      resource: 'domain',
+      icon: 'zone',
       permissions: ['assets.view_domain']
     },
     children: [
       {
         path: '',
-        name: 'DomainList',
+        name: 'ZoneList',
         component: () => import('@/views/assets/Domain/DomainList.vue'),
-        meta: { title: i18n.t('route.DomainList') }
+        meta: { title: i18n.t('ZoneList') }
       },
       {
         path: 'create',
-        name: 'DomainCreate',
+        name: 'ZoneCreate',
         component: () => import('@/views/assets/Domain/DomainCreateUpdate.vue'),
         hidden: true,
-        meta: { title: i18n.t('route.DomainCreate') }
+        meta: { title: i18n.t('ZoneCreate') }
       },
       {
         path: ':id/update',
-        name: 'DomainUpdate',
+        name: 'ZoneUpdate',
         component: () => import('@/views/assets/Domain/DomainCreateUpdate.vue'),
         hidden: true,
-        meta: { title: i18n.t('route.DomainUpdate') }
+        meta: { title: i18n.t('ZoneUpdate') }
       },
       {
         path: ':id',
-        name: 'DomainDetail',
+        name: 'ZoneDetail',
         component: () => import('@/views/assets/Domain/DomainDetail'),
         hidden: true,
-        meta: { title: i18n.t('route.DomainDetail') }
+        meta: { title: i18n.t('Zone') }
       }
     ]
   },
@@ -96,7 +276,7 @@ export default [
         name: 'GatewayCreate',
         component: () => import('@/views/assets/Domain/DomainDetail/GatewayCreateUpdate.vue'),
         meta: {
-          title: i18n.t('route.GatewayCreate'),
+          title: i18n.t('GatewayCreate'),
           permissions: ['assets.view_gateway']
         }
       },
@@ -105,111 +285,8 @@ export default [
         name: 'GatewayUpdate',
         component: () => import('@/views/assets/Domain/DomainDetail/GatewayCreateUpdate.vue'),
         meta: {
-          title: i18n.t('route.GatewayUpdate'),
+          title: i18n.t('GatewayUpdate'),
           permissions: ['assets.change_gateway']
-        }
-      }
-    ]
-  },
-  {
-    path: 'system-users',
-    component: empty,
-    redirect: '',
-    meta: {
-      permissions: ['assets.view_systemuser']
-    },
-    children: [
-      {
-        path: '',
-        name: 'SystemUserList',
-        component: () => import('@/views/assets/SystemUser/SystemUserList'),
-        meta: { title: i18n.t('route.SystemUserList') }
-      },
-      {
-        path: 'create',
-        name: 'SystemUserCreate',
-        component: () => import('@/views/assets/SystemUser/SystemUserCreateUpdate'),
-        hidden: true,
-        meta: { title: i18n.t('route.SystemUserCreate') }
-      },
-      {
-        path: ':id/update',
-        name: 'SystemUserUpdate',
-        component: () => import('@/views/assets/SystemUser/SystemUserCreateUpdate'),
-        hidden: true,
-        meta: { title: i18n.t('route.SystemUserUpdate') }
-      },
-      {
-        path: ':id',
-        name: 'SystemUserDetail',
-        component: () => import('@/views/assets/SystemUser/SystemUserDetail'),
-        hidden: true,
-        meta: { title: i18n.t('route.SystemUserDetail') }
-      }
-    ]
-  },
-  {
-    path: 'cmd-filters',
-    component: empty,
-    redirect: '',
-    meta: {
-      resource: 'commandfilter',
-      permissions: ['assets.view_commandfilter']
-    },
-    children: [
-      {
-        path: '',
-        name: 'CommandFilterList',
-        component: () => import('@/views/assets/CommandFilter/CommandFilterList.vue'),
-        meta: { title: i18n.t('route.CommandFilterList') }
-      },
-      {
-        path: ':id/update',
-        component: () => import('@/views/assets/CommandFilter/CommandFilterCreateUpdate.vue'), // Parent router-view
-        name: 'CommandFilterUpdate',
-        hidden: true,
-        meta: { title: i18n.t('route.CommandFilterUpdate') }
-      },
-      {
-        path: 'create',
-        component: () => import('@/views/assets/CommandFilter/CommandFilterCreateUpdate.vue'), // Parent router-view
-        name: 'CommandFilterCreate',
-        hidden: true,
-        meta: { title: i18n.t('route.CommandFilterCreate') }
-      },
-      {
-        path: ':id',
-        component: () => import('@/views/assets/CommandFilter/CommandFilterDetail'), // Parent router-view
-        name: 'CommandFilterDetail',
-        hidden: true,
-        meta: { title: i18n.t('route.CommandFilterDetail') }
-      }
-    ]
-  },
-  {
-    path: 'command-filter-rules',
-    component: empty,
-    hidden: true,
-    meta: {
-      resource: 'commandfilterrule'
-    },
-    children: [
-      {
-        path: 'create',
-        component: () => import('@/views/assets/CommandFilter/CommandFilterDetail/RulesCreateUpdate.vue'), // Parent router-view
-        name: 'CommandFilterRulesCreate',
-        meta: {
-          title: i18n.t('route.CommandFilterRulesCreate'),
-          activeMenu: '/console/assets/cmd-filters'
-        }
-      },
-      {
-        path: ':id/update',
-        component: () => import('@/views/assets/CommandFilter/CommandFilterDetail/RulesCreateUpdate.vue'), // Parent router-view
-        name: 'CommandFilterRulesUpdate',
-        meta: {
-          title: i18n.t('route.CommandFilterRulesUpdate'),
-          activeMenu: '/console/assets/cmd-filters'
         }
       }
     ]
@@ -219,7 +296,8 @@ export default [
     component: empty,
     meta: {
       permissions: ['assets.view_platform'],
-      resource: 'platform'
+      resource: 'platform',
+      icon: 'platform'
     },
     redirect: '',
     children: [
@@ -227,59 +305,28 @@ export default [
         path: '',
         name: 'PlatformList',
         component: () => import('@/views/assets/Platform/PlatformList'),
-        meta: { title: i18n.t('route.PlatformList') }
+        meta: { title: i18n.t('PlatformList') }
       },
       {
         path: 'create',
         component: () => import('@/views/assets/Platform/PlatformCreateUpdate.vue'), // Parent router-view
         name: 'PlatformCreate',
         hidden: true,
-        meta: { title: i18n.t('route.PlatformCreate') }
+        meta: { title: i18n.t('PlatformCreate') }
       },
       {
         path: ':id/update',
         component: () => import('@/views/assets/Platform/PlatformCreateUpdate.vue'), // Parent router-view
         name: 'PlatformUpdate',
         hidden: true,
-        meta: { title: i18n.t('route.PlatformUpdate'), permissions: [] }
+        meta: { title: i18n.t('PlatformUpdate'), permissions: [] }
       },
       {
         path: ':id',
-        component: () => import('@/views/assets/Platform/PlatformDetail.vue'), // Parent router-view
+        component: () => import('@/views/assets/Platform/PlatformDetail'), // Parent router-view
         name: 'PlatformDetail',
         hidden: true,
-        meta: { title: i18n.t('route.PlatformDetail') }
-      }
-    ]
-  },
-  {
-    path: 'labels',
-    component: empty,
-    redirect: '',
-    meta: {
-      resource: 'label',
-      permissions: ['assets.view_label']
-    },
-    children: [
-      {
-        path: '',
-        name: 'LabelList',
-        component: () => import('@/views/assets/Label/LabelList.vue'),
-        meta: { title: i18n.t('route.LabelList') }
-      },
-      {
-        path: 'create',
-        name: 'LabelCreate',
-        component: () => import('@/views/assets/Label/LabelCreateUpdate.vue'),
-        hidden: true,
-        meta: { title: i18n.t('route.LabelCreate') }
-      },
-      {
-        path: ':id/update',
-        name: 'LabelUpdate',
-        component: () => import('@/views/assets/Label/LabelCreateUpdate.vue'),
-        hidden: true,
-        meta: { title: i18n.t('route.LabelUpdate') }
+        meta: { title: i18n.t('PlatformDetail') }
       }
     ]
   },

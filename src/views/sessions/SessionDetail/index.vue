@@ -1,14 +1,11 @@
 <template>
   <GenericDetailPage
-    :url="url"
-    :submenu="submenu"
+    :active-menu.sync="config.activeMenu"
     :object.sync="sessionData"
-    :active-menu.sync="activeSubMenu"
-    :has-right-side="false"
-    :get-object-name="getSessionName"
+    v-bind="config"
   >
     <keep-alive>
-      <component :is="activeSubMenu" :object="sessionData" />
+      <component :is="config.activeMenu" :object="sessionData" />
     </keep-alive>
   </GenericDetailPage>
 </template>
@@ -18,6 +15,7 @@ import { GenericDetailPage } from '@/layout/components'
 import SessionCommands from './SessionCommands'
 import SessionDetailInfo from './SessionDetailInfo'
 import SessionJoinRecords from './SessionJoinRecords'
+import SessionFTPLogs from './SessionFTPLogs'
 
 export default {
   name: 'SessionDetail',
@@ -25,36 +23,45 @@ export default {
     GenericDetailPage,
     SessionCommands,
     SessionDetailInfo,
-    SessionJoinRecords
+    SessionJoinRecords,
+    SessionFTPLogs
   },
   data() {
     return {
       sessionData: {},
-      url: `/api/v1/terminal/sessions`,
-      activeSubMenu: 'SessionDetailInfo',
-      submenu: [
-        {
-          title: this.$t('route.Detail'),
-          name: 'SessionDetailInfo'
+      config: {
+        url: `/api/v1/terminal/sessions`,
+        activeMenu: 'SessionDetailInfo',
+        submenu: [
+          {
+            title: this.$t('Basic'),
+            name: 'SessionDetailInfo'
+          },
+          {
+            title: this.$t('Command'),
+            name: 'SessionCommands',
+            hidden: () => !this.$hasPerm('terminal.view_command')
+          },
+          {
+            title: this.$t('SessionJoinRecords'),
+            name: 'SessionJoinRecords',
+            hidden: () => !this.$hasPerm('terminal.view_sessionjoinrecord')
+          },
+          {
+            title: this.$t('FileTransfer'),
+            name: 'SessionFTPLogs',
+            hidden: () => !this.$hasPerm('audits.view_ftplog')
+          }
+        ],
+        getObjectName: (obj) => {
+          return obj.id
         },
-        {
-          title: this.$t('sessions.command'),
-          name: 'SessionCommands',
-          hidden: () => !this.$hasPerm('terminal.view_command')
-        },
-        {
-          title: this.$t('sessions.Activity'),
-          name: 'SessionJoinRecords',
-          hidden: () => !this.$hasPerm('terminal.view_sessionjoinrecord')
-        }
-      ]
+        hasActivity: true,
+        hasRightSide: false
+      }
     }
   },
-  methods: {
-    getSessionName() {
-      return this.sessionData.id
-    }
-  }
+  methods: {}
 }
 </script>
 

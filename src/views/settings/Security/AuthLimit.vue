@@ -1,40 +1,26 @@
 <template>
-  <div>
-    <el-button size="mini" type="primary" @click="visible = !visible">
-      {{ $t('setting.Setting') }}
-    </el-button>
-    <Dialog
-      :title="$t('setting.AuthLimit')"
-      :visible.sync="visible"
-      :destroy-on-close="true"
-      :show-cancel="false"
-      :show-confirm="false"
-      width="70%"
-      top="10%"
-      @confirm="onConfirm()"
-    >
-      <GenericCreateUpdateForm
-        v-bind="$data"
-        :fields="fields"
-        :url="url"
-        :fields-meta="fieldsMeta"
-        :submit-method="submitMethod"
-        :has-detail-in-msg="false"
-      />
-    </Dialog>
-  </div>
-
+  <IBox>
+    <GenericCreateUpdateForm
+      :fields="fields"
+      :fields-meta="fieldsMeta"
+      :has-detail-in-msg="false"
+      :submit-method="submitMethod"
+      :url="url"
+      v-bind="$data"
+    />
+  </IBox>
 </template>
 
 <script>
 import GenericCreateUpdateForm from '@/layout/components/GenericCreateUpdateForm'
-import { Dialog } from '@/components'
+import IBox from '@/components/IBox/index.vue'
+import { BlockedIPs } from '@/components'
 
 export default {
   name: 'EmailContent',
   components: {
-    GenericCreateUpdateForm,
-    Dialog
+    IBox,
+    GenericCreateUpdateForm
   },
   data() {
     return {
@@ -44,23 +30,24 @@ export default {
       visible: false,
       fields: [
         [
-          this.$t('common.UserLoginLimit'),
+          this.$t('User'),
           [
             'SECURITY_LOGIN_LIMIT_COUNT',
             'SECURITY_LOGIN_LIMIT_TIME'
           ]
         ],
         [
-          this.$t('common.IPLoginLimit'),
+          this.$t('IP'),
           [
             'SECURITY_LOGIN_IP_LIMIT_COUNT',
             'SECURITY_LOGIN_IP_LIMIT_TIME',
             'SECURITY_LOGIN_IP_WHITE_LIST',
-            'SECURITY_LOGIN_IP_BLACK_LIST'
+            'SECURITY_LOGIN_IP_BLACK_LIST',
+            'SECURITY_VIEW_BLOCKED_IPS'
           ]
         ],
         [
-          this.$t('common.Other'),
+          this.$t('Other'),
           [
             'USER_LOGIN_SINGLE_MACHINE_ENABLED',
             'ONLY_ALLOW_EXIST_USER_AUTH',
@@ -70,31 +57,36 @@ export default {
       ],
       successUrl: { name: 'Settings', params: { activeMenu: 'EmailContent' }},
       fieldsMeta: {
-      },
-      afterGetFormValue(validValues) {
-        validValues.SECURITY_LOGIN_IP_BLACK_LIST = validValues.SECURITY_LOGIN_IP_BLACK_LIST.toString()
-        validValues.SECURITY_LOGIN_IP_WHITE_LIST = validValues.SECURITY_LOGIN_IP_WHITE_LIST.toString()
-        return validValues
+        SECURITY_VIEW_BLOCKED_IPS: {
+          component: BlockedIPs,
+          label: this.$t('BlockedIPS'),
+          el: {
+            method: 'push_account_method',
+            assets: this.asset_ids,
+            nodes: this.node_ids
+          }
+        }
       },
       cleanFormValue(value) {
         const ipBlackList = value.SECURITY_LOGIN_IP_BLACK_LIST
         const ipWhiltList = value.SECURITY_LOGIN_IP_WHITE_LIST
-        if (!Array.isArray(ipBlackList)) {
-          value.SECURITY_LOGIN_IP_BLACK_LIST = ipBlackList ? ipBlackList.split(',') : []
+        if (Array.isArray(ipBlackList)) {
+          value.SECURITY_LOGIN_IP_BLACK_LIST = ipBlackList.filter(Boolean)
         }
-        if (!Array.isArray(ipWhiltList)) {
-          value.SECURITY_LOGIN_IP_WHITE_LIST = ipWhiltList ? ipWhiltList.split(',') : []
+        if (Array.isArray(ipWhiltList)) {
+          value.SECURITY_LOGIN_IP_WHITE_LIST = ipWhiltList.filter(Boolean)
         }
         return value
       },
-      url: '/api/v1/settings/setting/?category=security'
+      url: '/api/v1/settings/setting/?category=security_login_limit'
     }
   },
   methods: {
     submitMethod() {
       return 'patch'
     },
-    onConfirm() {}
+    onConfirm() {
+    }
   }
 }
 </script>

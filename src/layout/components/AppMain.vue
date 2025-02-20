@@ -1,55 +1,79 @@
 <template>
   <section class="app-main">
-    <transition name="fade-transform" mode="out-in">
-      <keep-alive :include="cachedViews">
+    <transition mode="out-in" name="fade-transform">
+      <keep-alive :max="10">
         <router-view :key="key" />
       </keep-alive>
     </transition>
+    <ChatGPT v-if="chatAiEnabled" />
   </section>
 </template>
 
 <script>
+import ChatGPT from '@/components/Apps/ChatAi'
+import { mapGetters } from 'vuex'
+
 export default {
   name: 'AppMain',
+  components: {
+    ChatGPT
+  },
   computed: {
+    ...mapGetters([
+      'publicSettings'
+    ]),
     key() {
-      return this.$route.path
+      // 想让创建后回来 List 页面不刷新，但是完全不刷新 table 会不对，所以创建完成后，会更新 order 和 updated
+      // query 去掉这两个，如果变了再刷新
+      const query = {}
+      for (const [k, v] of Object.entries(this.$route.query)) {
+        if (k.includes('updated') || k.includes('order')) {
+          continue
+        }
+        query[k] = v
+      }
+
+      let key
+      if (this.$route.name.toLowerCase().includes('list')) {
+        key = _.trimEnd(this.$route.path, '/') + '?' + new URLSearchParams(query).toString()
+      } else {
+        key = new Date().getTime()
+      }
+      return key
     },
-    cachedViews() {
-      return this.$store.state.tagsView.cachedViews
+    chatAiEnabled() {
+      return this.publicSettings?.CHAT_AI_ENABLED
     }
-  }
+  },
+  methods: {}
 }
 </script>
 
 <style lang="scss" scoped>
 .app-main {
   background-color: #f3f3f4;
-  min-height: calc(100vh - 50px);
+  height: 100vh !important;
   width: 100%;
   position: relative;
-  overflow: hidden;
+  overflow: auto;
   /*padding: 10px 20px 10px;*/
 }
-.fixed-header+.app-main {
-  padding-top: 55px;
+
+.fixed-header + .app-main {
+  padding-top: 50px;
 }
+
 .hasTagsView {
   .app-main {
     /* 84 = navbar + tags-view = 50 + 34 */
     min-height: calc(100vh - 84px);
   }
-  .fixed-header+.app-main {
+
+  .fixed-header + .app-main {
     padding-top: 84px;
   }
 }
 </style>
 
 <style lang="scss">
-// fix css style bug in open el-dialog
-.el-popup-parent--hidden {
-  .fixed-header {
-    padding-right: 15px;
-  }
-}
 </style>

@@ -4,7 +4,7 @@
 
 <script>
 import { GenericCreateUpdatePage } from '@/layout/components'
-import { Text } from '@/components/FormFields'
+import { TextReadonly } from '@/components/Form/FormFields'
 
 export default {
   components: {
@@ -23,9 +23,9 @@ export default {
           scope: scope
         },
         fields: [
-          [this.$t('common.Basic'), ['name', 'scope']],
-          [this.$t('perms.Permissions'), ['permissions']],
-          [this.$t('common.Other'), ['comment']]
+          [this.$t('Basic'), ['name', 'scope']],
+          [this.$t('Permissions'), ['permissions']],
+          [this.$t('Other'), ['comment']]
         ],
         fieldsMeta: {
           scope: {
@@ -33,9 +33,10 @@ export default {
             readonly: true
           },
           permissions: {
-            component: Text,
+            component: TextReadonly,
             el: {
-              text: this.$t('users.HelpText.addRolePermissions')
+              text: this.$t('AddInDetailText'),
+              bolder: false
             }
           }
         }
@@ -49,7 +50,7 @@ export default {
   },
   methods: {
     getObjectDone(role) {
-      this.config.url = `/api/v1/rbac/${role.scope}-roles/`
+      this.config.url = `/api/v1/rbac/${role.scope?.value}-roles/`
     }
   }
 }

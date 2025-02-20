@@ -1,23 +1,25 @@
 <template>
   <el-row :gutter="20">
     <el-col :md="14" :sm="24">
-      <DetailCard :items="detailItems" />
+      <AutoDetailCard :fields="detailFields" :object="object" :url="url" />
     </el-col>
     <el-col :md="10" :sm="24">
-      <IBox :title="$t('rbac.Permissions')">
+      <IBox :title="$tc('Permissions')">
         <div style="height: 10%">
           <el-button
-            size="small"
-            type="primary"
-            style="width: 100%;"
             :disabled="isDisabled"
+            size="small"
+            style="float: right; width: 100%"
+            type="primary"
             @click="updatePermissions"
           >
-            {{ $t('common.Update') }}
+            {{ $t('Update') }}
           </el-button>
         </div>
-        <div class="perm-tree">
-          <AutoDataZTree v-if="!loading" ref="tree" :setting="setting" />
+        <div class="tree-zone">
+          <div class="perm-tree">
+            <AutoDataZTree v-if="!loading" ref="tree" :setting="setting" />
+          </div>
         </div>
       </IBox>
     </el-col>
@@ -26,15 +28,14 @@
 
 <script>
 import { IBox } from '@/components'
-import DetailCard from '@/components/DetailCard'
-import AutoDataZTree from '@/components/AutoDataZTree'
-import { toSafeLocalDateStr } from '@/utils/common'
+import AutoDetailCard from '@/components/Cards/DetailCard/auto'
+import AutoDataZTree from '@/components/Tree/AutoDataZTree'
 
 export default {
   name: 'RolePerms',
   components: {
     AutoDataZTree,
-    DetailCard,
+    AutoDetailCard,
     IBox
   },
   props: {
@@ -53,7 +54,6 @@ export default {
         showMenu: false,
         showRefresh: true,
         showSearch: false,
-        customTreeHeader: false,
         treeUrl: '',
         check: {
           enable: true
@@ -77,11 +77,14 @@ export default {
         }
       },
       nodesDeps: {
-        'view_console': ['rbac.view_console'],
-        'view_audit': ['rbac.view_audit'],
-        'view_workbench': ['rbac.view_workbench'],
+        'view_console': [],
+        'view_audit': [],
+        'view_workbench': [
+          'authentication.view_connectiontoken', 'authentication.add_connectiontoken',
+          'authentication.expire_connectiontoken', 'authentication.reuse_connectiontoken'
+        ],
         'view_setting': ['settings.view_setting'],
-        'cloud_import': ['assets.view_asset'],
+        'cloud_import': ['assets.view_asset', 'assets.view_platform'],
         'terminal_node': ['settings.change_terminal'],
         'rbac.orgrolebinding': ['rbac.view_orgrole', 'users.view_user'],
         'rbac.systemrolebinding': ['rbac.view_systemrole', 'users.view_user'],
@@ -90,19 +93,33 @@ export default {
           'assets.match_asset', 'assets.match_node', 'assets.match_systemuser',
           'applications.match_application', 'rbac.view_workbench'
         ],
+        'terminal.view_sessionreplay': ['terminal.view_command'],
+        'rbac.view_filemanager': ['perms.view_myassets'],
         'tickets.view_ticketflow': ['tickets.view_ticket'],
+        'users.add_user': ['rbac.view_role'],
+        'users.change_user': ['rbac.view_role'],
         'users.invite_user': [
           'users.match_user', 'rbac.add_orgrolebinding',
           'rbac.view_orgrolebinding', 'rbac.view_orgrole'
         ],
         'acls.loginacl': ['users.view_user'],
         'acls.loginassetacl': ['users.view_user'],
-        'assets.view_asset': ['assets.view_node'],
-        'assets.commandfilterrule': ['assets.view_commandfilter'],
+        'acls.commandfilteracl': ['users.view_user'],
+        'assets.view_asset': ['assets.view_platform'],
+        'assets.view_node': ['assets.view_asset', 'assets.view_platform'],
+        'acls.commandgroup': ['acls.view_commandfilteracl'],
         'assets.gateway': ['assets.view_domain'],
+        'assets.add_gateway': ['assets.view_domain', 'assets.view_platform', 'assets.view_node'],
+        'assets.change_gateway': ['assets.view_domain', 'assets.view_platform', 'assets.view_node'],
         'assets.add_asset': ['assets.view_platform'],
         'assets.change_asset': ['assets.view_platform'],
-        'assets.view_authbook': ['assets.view_node'],
+        'accounts.view_gatheredaccount': ['assets.view_asset', 'assets.view_node'],
+        'accounts.view_account': ['assets.view_node'],
+        'accounts.view_accountsecret': ['accounts.view_account'],
+        'accounts.view_historyaccount': ['accounts.view_account', 'accounts.view_accountsecret'],
+        'accounts.view_accounttemplatesecret': ['accounts.view_accounttemplate'],
+        'accounts.view_historyaccountsecret': ['accounts.view_account', 'accounts.view_accountsecret'],
+        'accounts.add_account': ['assets.view_asset'],
         'assets.gathereduser': ['assets.view_node'],
         'assets.refresh_assethardwareinfo': ['assets.change_asset'],
         'xpack.gatherusertaskexecution': ['xpack.view_gatherusertask'],
@@ -126,6 +143,14 @@ export default {
         'terminal.view_status': ['settings.change_terminal'],
         'terminal.view_task': ['settings.change_terminal'],
         'terminal.view_terminal': ['settings.change_terminal'],
+        'terminal.add_applethost': ['assets.view_platform'],
+        'terminal.change_applethost': ['assets.view_platform'],
+        'ops.view_job': ['assets.view_asset', 'assets.view_node', 'ops.view_adhoc', 'ops.view_playbook'],
+        'ops.change_job': ['assets.view_asset', 'assets.view_node', 'ops.view_adhoc', 'ops.view_playbook'],
+        'ops.add_job': ['assets.view_asset', 'assets.view_node', 'ops.view_adhoc', 'ops.view_playbook'],
+        'ops.add_jobexecution': ['ops.view_celerytaskexecution'],
+        'authentication.add_connectiontoken': ['rbac.view_webterminal'],
+        'labels.view_labeledresource': ['rbac.view_contenttype'],
         'xpack.add_syncinstancetask': [
           'assets.view_asset', 'assets.view_node', 'assets.view_systemuser',
           'xpack.view_account'
@@ -139,7 +164,12 @@ export default {
         'xpack.view_applicationchangeauthplan': ['applications.view_application', 'assets.view_systemuser'],
         'xpack.view_applicationchangeauthplantask': ['xpack.view_applicationchangeauthplan'],
         'xpack.view_applicationchangeauthplanexecution': ['xpack.view_applicationchangeauthplan']
-      }
+      },
+      url: `/api/v1/rbac/${this.object.scope.value}-roles/${this.object.id}`,
+      detailFields: [
+        'display_name', 'scope_display', 'builtin', 'created_by',
+        'date_created', 'date_updated', 'comment'
+      ]
     }
   },
   computed: {
@@ -147,50 +177,21 @@ export default {
       return this.$refs.tree.zTree
     },
     scope() {
-      return this.object.scope
-    },
-    detailItems() {
-      return [
-        {
-          key: this.$t('common.Name'),
-          value: this.object.display_name
-        },
-        {
-          key: this.$t('common.Scope'),
-          value: this.object['scope_display']
-        },
-        {
-          key: this.$t('common.Builtin'),
-          value: this.object['builtin']
-        },
-        {
-          key: this.$t('common.CreatedBy'),
-          value: this.object.created_by
-        },
-        {
-          key: this.$t('common.DateCreated'),
-          value: toSafeLocalDateStr(this.object.date_created)
-        },
-        {
-          key: this.$t('common.DateUpdated'),
-          value: toSafeLocalDateStr(this.object.date_updated)
-        },
-        {
-          key: this.$t('common.Comment'),
-          value: this.object.comment
-        }
-      ]
+      return this.object.scope.value
     }
   },
   mounted() {
-    this.setting.treeUrl = `/api/v1/rbac/${this.object.scope}-roles/${this.object.id}/permissions/tree/`
+    this.setting.treeUrl = `/api/v1/rbac/${this.object.scope.value}-roles/${this.object.id}/permissions/tree/`
+  },
+  activated() {
+    this.loading = true
     setTimeout(() => {
       this.loading = false
     })
   },
   methods: {
     setUpdateBtn() {
-      const permRequired = `rbac.change_${this.object.scope}role`
+      const permRequired = `rbac.change_${this.object.scope.value}role`
       if (this.$hasPerm(permRequired)) {
         this.isDisabled = false
       }
@@ -285,14 +286,14 @@ export default {
       const checkedNodes = ztree.getCheckedNodes()
       const permNodes = checkedNodes.filter(node => !node.isParent)
       const permIds = permNodes.map(node => node.id)
-      const roleDetailUrl = `/api/v1/rbac/${this.object.scope}-roles/${this.object.id}/`
+      const roleDetailUrl = `/api/v1/rbac/${this.object.scope.value}-roles/${this.object.id}/`
       const data = {
         permissions: permIds
       }
       this.$axios.patch(roleDetailUrl, data).then(() => {
-        this.$message.success(this.$t('common.updateSuccessMsg'))
+        this.$message.success(this.$tc('UpdateSuccessMsg'))
       }).catch(error => {
-        this.$message.error(this.$t('common.updateErrorMsg') + error)
+        this.$message.error(this.$tc('UpdateErrorMsg') + error)
         this.$log.error(error)
       })
     }
@@ -301,18 +302,28 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.perm-tree >>> .ztree * {
-  background: white;
-}
-.perm-tree >>> .ztree {
-  background: white !important;
-}
-.perm-tree >>> .checkbox_true_disable,
-.perm-tree >>> .checkbox_false_disable {
-  cursor: not-allowed!important;
-}
-.perm-tree >>> .checkbox_true_disable:before,
-.perm-tree >>> .checkbox_false_disable:before  {
-  color: #aaaaaa!important;
+.perm-tree {
+
+  ::v-deep {
+    .ztree * {
+      //background: white;
+    }
+
+    .ztree {
+      background: white !important;
+
+      .button.chk {
+        //float: right;
+      }
+    }
+
+    .checkbox_false_disable, .checkbox_true_disable {
+      cursor: not-allowed !important;
+    }
+
+    .checkbox_true_disable:before, .checkbox_false_disable:before {
+      color: #aaaaaa !important;
+    }
+  }
 }
 </style>

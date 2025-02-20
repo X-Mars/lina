@@ -1,5 +1,5 @@
 <template>
-  <GenericDetailPage :object.sync="group" :active-menu.sync="config.activeMenu" v-bind="config" v-on="$listeners">
+  <GenericDetailPage :active-menu.sync="config.activeMenu" :object.sync="group" v-bind="config" v-on="$listeners">
     <keep-alive>
       <component :is="config.activeMenu" :object="group" />
     </keep-alive>
@@ -8,14 +8,14 @@
 
 <script>
 import { GenericDetailPage } from '@/layout/components'
-import GroupGrantedAssets from './GroupGrantedAssets'
 import GroupInfo from './GroupInfo'
+import GroupUser from './GroupUser'
 
 export default {
   components: {
     GenericDetailPage,
-    GroupGrantedAssets,
-    GroupInfo
+    GroupInfo,
+    GroupUser
   },
   data() {
     return {
@@ -25,13 +25,12 @@ export default {
         activeMenu: 'GroupInfo',
         submenu: [
           {
-            title: this.$t('common.BasicInfo'),
+            title: this.$t('Basic'),
             name: 'GroupInfo'
           },
           {
-            title: this.$t('users.tabs.grantedAssets'),
-            name: 'GroupGrantedAssets',
-            hidden: () => !this.$hasPerm('perms.view_usergroupassets')
+            title: this.$t('UserList'),
+            name: 'GroupUser'
           }
         ]
       }
@@ -46,5 +45,7 @@ export default {
 </script>
 
 <style lang='scss' scoped>
-
+::v-deep table.CardTable {
+  table-layout: auto !important;
+}
 </style>

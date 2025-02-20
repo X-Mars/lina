@@ -1,5 +1,5 @@
 <template>
-  <GenericDetailPage :object.sync="user" :active-menu.sync="config.activeMenu" v-bind="config" v-on="$listeners">
+  <GenericDetailPage :active-menu.sync="config.activeMenu" :object.sync="user" v-bind="config" v-on="$listeners">
     <keep-alive>
       <component :is="config.activeMenu" :object="user" />
     </keep-alive>
@@ -7,23 +7,31 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import { GenericDetailPage } from '@/layout/components'
-import UserAssetPermissionRules from './UserAssetPermissionRules'
-import UserGrantedAssets from './UserGrantedAssets'
-import UserGrantedApplications from './UserGrantedApplications'
-import UserApplicationPermissionRules from './UserApplicationsPermissionRules'
-import UserLoginACLList from '@/views/acl/UserLoginACL/UserLoginACLList'
+
 import UserInfo from './UserInfo'
+import UserSession from './UserSession.vue'
+import UserLoginAcl from './UserLoginAcl.vue'
+import UserGrantedAssets from './UserGrantedAssets'
+import AssetPermissionUser from '@/views/perms/AssetPermission/AssetPermissionDetail/AssetPermissionUser.vue'
+import AssetPermissionAsset from '@/views/perms/AssetPermission/AssetPermissionDetail/AssetPermissionAsset.vue'
+import AssetPermissionDetail from '@/views/perms/AssetPermission/AssetPermissionDetail/index.vue'
+import AssetPermissionAccount from '@/views/perms/AssetPermission/AssetPermissionDetail/AssetPermissionAccount.vue'
+import UserAssetPermissionRules from './UserAssetPermissionRules'
 
 export default {
   components: {
-    GenericDetailPage,
     UserInfo,
+    UserSession,
+    UserLoginAcl,
+    GenericDetailPage,
     UserGrantedAssets,
-    UserAssetPermissionRules,
-    UserGrantedApplications,
-    UserApplicationPermissionRules,
-    UserLoginACLList
+    AssetPermissionUser,
+    AssetPermissionAsset,
+    AssetPermissionDetail,
+    AssetPermissionAccount,
+    UserAssetPermissionRules
   },
   data() {
     const vm = this
@@ -32,41 +40,44 @@ export default {
       config: {
         activeMenu: 'UserInfo',
         actions: {
-          canUpdate: this.$hasPerm('users.change_user')
+          canUpdate: () => {
+            return this.$hasPerm('users.change_user') &&
+              !(!this.currentUserIsSuperAdmin && this.user['is_superuser'])
+          }
         },
         submenu: [
           {
-            title: this.$t('common.BasicInfo'),
+            title: this.$t('Basic'),
             name: 'UserInfo'
           },
           {
-            title: this.$t('users.tabs.grantedAssets'),
+            title: this.$t('GrantedAssets'),
             name: 'UserGrantedAssets',
             hidden: () => !vm.$hasPerm('perms.view_userassets')
           },
           {
-            title: this.$t('users.tabs.assetPermissionRules'),
+            title: this.$t('AssetPermissionRules'),
             name: 'UserAssetPermissionRules',
             hidden: () => !vm.$hasPerm('perms.view_assetpermission')
           },
           {
-            title: this.$t('users.tabs.grantedApplications'),
-            name: 'UserGrantedApplications',
-            hidden: () => !vm.$hasPerm('perms.view_userapps')
-          },
-          {
-            title: this.$t('users.tabs.ApplicationPermissionRules'),
-            name: 'UserApplicationPermissionRules',
-            hidden: () => !vm.$hasPerm('perms.view_applicationpermission')
-          },
-          {
-            title: this.$t('route.UserAclLists'),
-            name: 'UserLoginACLList',
+            title: this.$t('UserAclLists'),
+            name: 'UserLoginAcl',
             hidden: () => !vm.$hasPerm('acls.view_loginacl')
+          },
+          {
+            title: this.$t('UserSession'),
+            name: 'UserSession',
+            hidden: () => !vm.$hasPerm('terminal.view_session')
           }
         ]
       }
     }
+  },
+  computed: {
+    ...mapGetters([
+      'currentUserIsSuperAdmin'
+    ])
   },
   methods: {
     handleTabClick(tab) {
@@ -75,7 +86,3 @@ export default {
   }
 }
 </script>
-
-<style lang='scss' scoped>
-
-</style>

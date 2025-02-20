@@ -1,13 +1,14 @@
 <template>
-  <TabPage v-if="!loading" :submenu="submenu" :active-menu.sync="iActiveMenu" @tab-click="handleTabClick">
-    <template #title>
-      <el-button class="go-back" icon="el-icon-back" @click="handleGoBack" />
-      <span style="padding-left: 10px">{{ iTitle }}</span>
-    </template>
-
+  <TabPage
+    v-if="!loading"
+    :active-menu.sync="iActiveMenu"
+    :submenu="iSubmenu"
+    :title="iTitle"
+    @tab-click="handleTabClick"
+  >
     <template #headingRightSide>
       <span v-if="hasRightSide">
-        <ActionsGroup slot="headingRightSide" :actions="pageActions" />
+        <ActionsGroup slot="headingRightSide" :actions="pageActions" class="header-buttons" />
       </span>
     </template>
     <slot />
@@ -19,7 +20,11 @@ import TabPage from '../TabPage'
 import { flashErrorMsg } from '@/utils/request'
 import { getApiPath } from '@/utils/common'
 import ActionsGroup from '@/components/ActionsGroup'
+import ResourceActivity from '@/components/Apps/ResourceActivity/index.vue'
 import { mapGetters } from 'vuex'
+import Vue from 'vue'
+
+Vue.component('ResourceActivity', ResourceActivity)
 
 export default {
   name: 'GenericDetailPage',
@@ -54,6 +59,10 @@ export default {
       type: String,
       default: () => ''
     },
+    hasActivity: {
+      type: Boolean,
+      default: () => true
+    },
     hasRightSide: {
       type: Boolean,
       default: true
@@ -71,7 +80,11 @@ export default {
     getTitle: {
       type: Function,
       default: function(obj) {
-        const objectType = this.$route.meta.title.replace('Detail', '').replace('详情', '')
+        const objectType = this.$route.meta.title
+          .replace('Details', '')
+          .replace('Detail', '')
+          .replace('详情', '')
+          .trim()
         this.$log.debug('Object is: ', obj)
         const titlePrefix = this.titlePrefix || objectType
         const objectName = this.getObjectName(obj)
@@ -80,12 +93,6 @@ export default {
           title = title.slice(0, 80) + '...'
         }
         return title
-      }
-    },
-    goBack: {
-      type: Function,
-      default: function(obj) {
-        return this.$router.back()
       }
     }
   },
@@ -101,14 +108,18 @@ export default {
     const defaultActions = {
       // Delete button
       canDelete: vm.$hasCurrentResAction('delete'),
-      deleteCallback: function(item) { vm.defaultDelete(item) },
+      deleteCallback: function(item) {
+        vm.defaultDelete(item)
+      },
       deleteApiUrl: detailApiUrl,
       deleteSuccessRoute: this.$route.name.replace('Detail', 'List'),
       // Update button
       canUpdate: () => {
         return !vm.currentOrgIsRoot && vm.$hasCurrentResAction('change')
       },
-      updateCallback: function(item) { this.defaultUpdate(item) },
+      updateCallback: function(item) {
+        this.defaultUpdate(item)
+      },
       updateRoute: this.$route.name.replace('Detail', 'Update')
     }
     return {
@@ -124,16 +135,20 @@ export default {
       return [
         {
           name: 'update',
-          title: this.$t('common.Update'),
+          title: this.$t('Edit'),
+          icon: 'el-icon-edit-outline',
+          size: 'small',
           can: this.validActions.canUpdate,
           has: this.validActions.hasUpdate,
           callback: this.validActions.updateCallback.bind(this)
         },
         {
           name: 'delete',
-          title: this.$t('common.Delete'),
+          title: this.$t('Delete'),
           type: 'danger',
           plain: true,
+          icon: 'el-icon-delete',
+          size: 'small',
           can: this.validActions.canDelete,
           has: this.validActions.hasDelete,
           callback: this.validActions.deleteCallback.bind(this)
@@ -150,6 +165,17 @@ export default {
       set(item) {
         this.$emit('update:activeMenu', item)
       }
+    },
+    iSubmenu() {
+      if (!this.hasActivity) {
+        return this.submenu
+      }
+      const activity = {
+        title: this.$t('Activity'),
+        name: 'ResourceActivity',
+        hidden: () => !this.$hasPerm('audits.view_activitylog')
+      }
+      return [...this.submenu, activity]
     }
   },
   async mounted() {
@@ -162,13 +188,14 @@ export default {
   },
   methods: {
     defaultDelete() {
-      const msg = this.$t('common.deleteWarningMsg') + ' ' + this.iTitle + ' ?'
-      const title = this.$t('common.Info')
+      const msg = this.$t('DeleteWarningMsg') + ' ' + this.iTitle + ' ?'
+      const title = this.$t('Info')
       const performDelete = () => {
         const url = this.validActions.deleteApiUrl
         this.$log.debug('Start perform delete: ', url)
         return this.$axios.delete(url)
       }
+
       this.$alert(msg, title, {
         type: 'warning',
         confirmButtonClass: 'el-button--danger',
@@ -179,10 +206,15 @@ export default {
           try {
             await performDelete.bind(this)()
             done()
-            this.$message.success(this.$t('common.deleteSuccessMsg'))
+            this.$message.success(this.$tc('DeleteSuccessMsg'))
             this.$router.push({ name: this.validActions.deleteSuccessRoute })
           } catch (error) {
-            this.$message.error(this.$t('common.deleteErrorMsg') + ' ' + error)
+            const errorDetail = error?.response?.data?.detail || ''
+            if (errorDetail) {
+              this.$message.error(errorDetail)
+            } else {
+              this.$message.error(this.$tc('DeleteErrorMsg') + ' ' + error)
+            }
           } finally {
             instance.confirmButtonLoading = false
           }
@@ -212,7 +244,7 @@ export default {
         this.$emit('getObjectDone', data)
       }).catch(error => {
         if (error.response && error.response.status === 404) {
-          const msg = this.$t('common.ObjectNotFoundOrDeletedMsg')
+          const msg = this.$t('ObjectNotFoundOrDeletedMsg')
           this.$message.error(msg)
         } else {
           flashErrorMsg({ error, response: error.response })
@@ -223,37 +255,13 @@ export default {
       this.$emit('tab-click', tab, this.iActiveMenu)
       this.$emit('update:activeMenu', tab.name)
       this.$log.debug('Current tab is: ', this.activeMenu)
-    },
-    handleGoBack() {
-      return this.goBack.bind(this)(this.object)
     }
   }
 }
 </script>
 
 <style scoped>
-  .page-submenu >>> .el-tabs__header {
-    background-color: white;
-    margin-left: -25px;
-    padding-left: 25px;
-    margin-right: -25px;
-    padding-right: 25px;
-    margin-top: -30px;
-    /*margin: 0;*/
-    /*background-color: #f3f3f4;*/
-  }
-
-  .page-submenu >>> .el-tabs__nav-wrap {
-    position: static;
-  }
-
-  .go-back {
-    border: none;
-    padding: 2px 2px;
-  }
-
-  .go-back >>> i {
-    font-size: 18px;
-    font-weight: 600;
+  .header-buttons {
+    z-index: 999;
   }
 </style>

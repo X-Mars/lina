@@ -1,4 +1,5 @@
 <script>
+
 export default {
   name: 'MenuItem',
   functional: true,
@@ -14,18 +15,28 @@ export default {
   },
   render(h, context) {
     const { icon, title } = context.props
-    const vnodes = []
+    const vNodes = []
+
+    const ellipsisStyle = {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      width: '100%',
+      display: 'inline-block'
+    }
 
     if (icon) {
-      const cls = 'fa fa-' + icon
-      vnodes.push(<i class={cls} />)
-      // vnodes.push(<svg-icon icon-class={icon}/>)
+      if (icon.startsWith('fa-')) {
+        vNodes.push(<i class={`fa ${icon}`} />)
+      } else {
+        vNodes.push(<svg-icon icon-class={icon}/>)
+      }
     }
 
     if (title) {
-      vnodes.push(<span slot='title'>{(title)}</span>)
+      vNodes.push(<span slot='title' style={ellipsisStyle} title={ title }>{title}</span>)
     }
-    return vnodes
+    return vNodes
   }
 }
 </script>

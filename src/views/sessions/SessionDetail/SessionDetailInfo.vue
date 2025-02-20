@@ -1,19 +1,20 @@
 <template>
   <el-row :gutter="20">
-    <el-col :md="14" :sm="24">
+    <el-col :md="15" :sm="24">
       <DetailCard v-if="object" :items="detailItems" />
     </el-col>
-    <el-col :md="10" :sm="24">
-      <QuickActions v-if="object" type="primary" :actions="quickActions" />
+    <el-col :md="9" :sm="24">
+      <QuickActions v-if="object" :actions="quickActions" type="primary" />
     </el-col>
   </el-row>
 </template>
 
 <script>
-import DetailCard from '@/components/DetailCard/index'
+import DetailCard from '@/components/Cards/DetailCard/index'
 import QuickActions from '@/components/QuickActions'
 import { terminateSession } from '@/api/sessions'
-import { toSafeLocalDateStr } from '@/utils/common'
+import { toSafeLocalDateStr } from '@/utils/time'
+
 export default {
   name: 'SessionDetailInfo',
   components: {
@@ -36,17 +37,17 @@ export default {
       const vm = this
       return [
         {
-          title: this.$t('sessions.sessionTerminate'),
+          title: this.$t('SessionTerminate'),
           attrs: {
             type: 'danger',
-            label: this.$t('sessions.terminate'),
+            label: this.$t('Terminate'),
             disabled: !this.session['can_terminate'] || !vm.$hasPerm('terminal.terminate_session')
           },
           callbacks: {
             click: function() {
               // 终断 session reload
               terminateSession(vm.session.id).then(res => {
-                const msg = vm.$t('sessions.TerminateTaskSendSuccessMsg')
+                const msg = vm.$t('TerminateTaskSendSuccessMsg')
                 vm.$message.success(msg)
                 window.setTimeout(function() {
                   window.location.reload()
@@ -56,11 +57,12 @@ export default {
           }
         },
         {
-          title: this.$t('sessions.sessionMonitor'),
+          title: this.$t('SessionMonitor'),
           attrs: {
             type: 'primary',
-            label: this.$t('sessions.Monitor'),
-            disabled: !this.session['can_join'] || !vm.$hasPerm('terminal.monitor_session')
+            label: this.$t('Monitor'),
+            disabled: !this.session['can_join'] || !vm.$hasPerm('terminal.monitor_session') ||
+              vm.session.type.value === 'sftp'
           },
           callbacks: {
             click: function() {
@@ -76,10 +78,10 @@ export default {
       const vm = this
       return [
         {
-          title: this.$t('sessions.replaySession'),
+          title: this.$t('ReplaySession'),
           attrs: {
             type: 'primary',
-            label: this.$t('sessions.replay'),
+            label: this.$t('Replay'),
             disabled: !this.session['can_replay'] || !vm.$hasPerm('terminal.view_sessionreplay')
           },
           callbacks: {
@@ -90,15 +92,16 @@ export default {
           }
         },
         {
-          title: this.$t('sessions.downloadReplay'),
+          title: this.$t('DownloadReplay'),
           attrs: {
             type: 'primary',
-            label: this.$t('sessions.download'),
+            label: this.$t('Download'),
             disabled: !this.session['can_replay'] || !vm.$hasPerm('terminal.download_sessionreplay')
           },
           callbacks: {
             click: function() {
-              const downloadUrl = `/api/v1/terminal/sessions/${vm.session.id}/replay/download/`
+              const oid = vm.session.org_id || ''
+              const downloadUrl = `/api/v1/terminal/sessions/${vm.session.id}/replay/download/${oid ? '?oid=' + oid : ''}`
               window.open(downloadUrl)
             }
           }
@@ -108,35 +111,36 @@ export default {
     detailItems() {
       return [
         {
-          key: this.$t('sessions.user'),
+          key: this.$t('User'),
           value: this.session.user
         },
         {
-          key: this.$t('sessions.asset'),
+          key: this.$t('Host'),
           value: this.session.asset
         },
         {
-          key: this.$t('sessions.systemUser'),
-          value: this.session.system_user
+          key: this.$t('Account'),
+          value: this.session.account
+
         },
         {
-          key: this.$t('sessions.protocol'),
+          key: this.$t('Protocol'),
           value: this.session.protocol
         },
         {
-          key: this.$t('sessions.loginFrom'),
-          value: this.session.login_from
+          key: this.$t('LoginFrom'),
+          value: this.session.login_from?.label || '-'
         },
         {
-          key: this.$t('sessions.remoteAddr'),
+          key: this.$t('RemoteAddr'),
           value: this.session.remote_addr
         },
         {
-          key: this.$t('sessions.dateStart'),
+          key: this.$t('DateStart'),
           value: toSafeLocalDateStr(this.session.date_start)
         },
         {
-          key: this.$t('sessions.dateEnd'),
+          key: this.$t('DateEnd'),
           value: this.session.date_end ? toSafeLocalDateStr(this.session.date_end) : ''
         }
       ]

@@ -4,6 +4,7 @@
 
 <script>
 import DataActions from '@/components/DataActions'
+
 export default {
   name: 'ActionsGroup',
   components: {
@@ -18,15 +19,13 @@ export default {
       type: Array,
       default: () => []
     },
+    moreActionBtn: {
+      type: Object,
+      default: () => ({})
+    },
     moreActionsTitle: {
       type: String,
-      default() {
-        return this.$t('common.MoreActions')
-      }
-    },
-    moreActionsType: {
-      type: String,
-      default: 'default'
+      default: ''
     },
     moreActionsPlacement: {
       type: String,
@@ -43,19 +42,23 @@ export default {
       return actions
     },
     iMoreAction() {
-      return {
+      const defaultBtn = {
         name: 'moreActions',
-        title: this.iMoreActionsTitle,
+        title: '',
+        type: 'primary',
+        icon: 'el-icon-more',
+        plain: true
+      }
+      const btn = {
+        ...defaultBtn,
+        ...this.moreActionBtn,
         dropdown: this.moreActions || []
       }
-    },
-    iMoreActionsTitle() {
-      return this.moreActionsTitle || this.$t('common.MoreActions')
+      if (this.moreActionsTitle) {
+        btn.title = this.moreActionsTitle
+      }
+      return btn
     }
   }
 }
 </script>
-
-<style scoped>
-
-</style>

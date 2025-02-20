@@ -1,10 +1,11 @@
 <template>
-  <GenericListPage ref="GenericListPage" :table-config="tableConfig" :header-actions="headerActions" />
+  <GenericListPage ref="GenericListPage" :header-actions="headerActions" :table-config="tableConfig" />
 </template>
 
 <script>
 import { GenericListPage } from '@/layout/components'
-import { DetailFormatter } from '@/components/TableFormatters'
+import { DetailFormatter } from '@/components/Table/TableFormatters'
+
 export default {
   name: 'TicketFlow',
   components: {
@@ -15,29 +16,29 @@ export default {
     return {
       tableConfig: {
         url: '/api/v1/tickets/flows/',
-        columns: [
-          'type_display', 'created_by', 'org_name',
-          'date_created', 'date_updated', 'actions'
-        ],
+        columnsExclude: ['rules'],
         columnsShow: {
-          min: ['actions'],
+          min: ['type', 'actions'],
           default: [
-            'type_display', 'created_by', 'org_name',
+            'type', 'created_by', 'org_name',
             'date_created', 'date_updated', 'actions'
           ]
         },
         columnsMeta: {
           org_name: {
             formatter: function(row, col, cell) {
-              var currentOrg = vm.$store.getters.currentOrg
-              return currentOrg.is_root ? row.org_name : currentOrg.name
+              const currentOrg = vm.$store.getters.currentOrg
+              return currentOrg['is_root'] ? row.org_name : currentOrg.name
             }
           },
-          type_display: {
+          type: {
             formatter: DetailFormatter,
             formatterArgs: {
               permissions: 'tickets.view_ticketflow',
-              route: 'FlowDetail'
+              route: 'FlowDetail',
+              getTitle: function({ row }) {
+                return row.type.label
+              }
             }
           },
           actions: {
@@ -60,7 +61,6 @@ export default {
       },
       headerActions: {
         hasLeftActions: false,
-        hasRightActions: false,
         hasSearch: false
       }
     }

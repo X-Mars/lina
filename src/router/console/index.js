@@ -3,13 +3,11 @@ import i18n from '@/i18n/i18n'
 import empty from '@/layout/empty'
 import store from '@/store'
 
-import UsersRoute from './users'
-import AssetsRoute from './assets'
-import ApplicationsRoute from './applications'
-import PermsRoute from './perms'
-import OpsRoutes from './ops'
-import AclRoutes from './acls'
-import AccountRoutes from './accounts'
+import UsersMenu from './users'
+import AssetsMenu from './assets'
+import PermsMenu from './perms'
+import AccountMenus from './accounts'
+import LabelMenus from './labels'
 
 export default {
   path: '/console',
@@ -17,8 +15,8 @@ export default {
   name: 'console',
   redirect: '/console/dashboard',
   meta: {
-    title: i18n.t('common.nav.Console'),
-    icon: 'el-icon-s-operation',
+    title: i18n.t('Console'),
+    icon: 'console',
     view: 'console',
     type: 'view',
     showNavSwitcher: () => {
@@ -29,11 +27,11 @@ export default {
   children: [
     {
       path: '/console/dashboard',
-      component: () => import('@/views/dashboard/index'),
+      component: () => import('@/views/dashboard/Console/index'),
       name: 'AdminDashboard',
       meta: {
         icon: 'dashboard',
-        title: i18n.t('route.Dashboard'),
+        title: i18n.t('Dashboard'),
         permissions: []
       }
     },
@@ -42,72 +40,52 @@ export default {
       component: empty,
       name: 'Users',
       meta: {
-        title: i18n.t('route.Users'),
+        title: i18n.t('MenuUsers'),
         icon: 'users'
       },
-      children: UsersRoute
+      children: UsersMenu
     },
     {
       path: '/console/assets',
       component: empty,
       name: 'Assets',
       meta: {
-        title: i18n.t('route.Assets'),
-        icon: 'inbox'
+        title: i18n.t('MenuAssets'),
+        icon: 'assets'
       },
-      children: AssetsRoute
-    },
-    {
-      path: '/console/applications',
-      component: empty,
-      name: 'applications',
-      meta: {
-        title: i18n.t('route.Applications'),
-        icon: 'th'
-      },
-      children: ApplicationsRoute
+      children: AssetsMenu
     },
     {
       path: '/console/accounts',
       component: empty,
       name: 'Accounts',
       meta: {
-        licenseRequired: true,
-        title: i18n.t('route.Accounts'),
-        icon: 'address-book'
+        title: i18n.t('MenuAccounts'),
+        icon: 'key'
       },
-      children: AccountRoutes
+      children: AccountMenus
     },
     {
       path: '/console/perms',
       component: empty,
       name: 'Perms',
       meta: {
-        title: i18n.t('route.Perms'),
-        icon: 'edit'
+        title: i18n.t('MenuPermissions'),
+        icon: 'permission',
+        resource: 'assetpermission',
+        permissions: []
       },
-      children: PermsRoute
+      children: PermsMenu
     },
     {
-      path: '/console/acls',
+      path: '/console/more',
       component: empty,
-      name: 'Acl',
+      name: 'More',
       meta: {
-        licenseRequired: true,
-        title: i18n.t('route.Acl'),
-        icon: 'fort-awesome'
+        title: i18n.t('MenuMore'),
+        icon: 'more'
       },
-      children: AclRoutes
-    },
-    {
-      path: '/console/ops',
-      component: empty,
-      name: 'JobCenter',
-      meta: {
-        title: i18n.t('route.JobCenter'),
-        icon: 'coffee'
-      },
-      children: OpsRoutes
+      children: LabelMenus
     }
   ]
 }

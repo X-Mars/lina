@@ -1,5 +1,11 @@
 <template>
-  <GenericDetailPage :object.sync="AssetPermission" :active-menu.sync="config.activeMenu" v-bind="config" v-on="$listeners" @tab-click="TabClick">
+  <GenericDetailPage
+    :active-menu.sync="config.activeMenu"
+    :object.sync="AssetPermission"
+    v-bind="config"
+    v-on="$listeners"
+    @tab-click="handleTabClick"
+  >
     <keep-alive>
       <component :is="config.activeMenu" :object="AssetPermission" />
     </keep-alive>
@@ -11,6 +17,7 @@ import { GenericDetailPage, TabPage } from '@/layout/components'
 import AssetPermissionDetail from './AssetPermissionDetail'
 import AssetPermissionUser from './AssetPermissionUser'
 import AssetPermissionAsset from './AssetPermissionAsset'
+import AssetPermissionAccount from './AssetPermissionAccount'
 
 export default {
   components: {
@@ -18,37 +25,49 @@ export default {
     AssetPermissionDetail,
     AssetPermissionUser,
     AssetPermissionAsset,
+    AssetPermissionAccount,
     TabPage
   },
   data() {
     return {
       AssetPermission: {
-        name: '', users_amount: 0, user_groups_amount: 0, assets_amount: 0, nodes_amount: 0, system_users_amount: 0,
-        date_start: '', date_expired: ''
+        name: '',
+        users_amount: 0,
+        user_groups_amount: 0,
+        assets_amount: 0,
+        nodes_amount: 0,
+        system_users_amount: 0,
+        date_start: '',
+        date_expired: ''
       },
       config: {
         activeMenu: 'AssetPermissionDetail',
         submenu: [
           {
-            title: this.$t('common.BasicInfo'),
+            title: this.$t('Basic'),
             name: 'AssetPermissionDetail'
           },
           {
-            title: this.$t('perms.usersAndUserGroups'),
+            title: this.$t('UsersAndUserGroups'),
             name: 'AssetPermissionUser',
             hidden: () => !this.$hasPerm('users.view_user') || !this.$hasPerm('perms.change_assetpermission')
           },
           {
-            title: this.$t('perms.assetAndNode'),
+            title: this.$t('AssetAndNode'),
             name: 'AssetPermissionAsset',
             hidden: () => !this.$hasPerm('assets.view_asset') || !this.$hasPerm('perms.change_assetpermission')
+          },
+          {
+            title: this.$t('PermAccount'),
+            name: 'AssetPermissionAccount',
+            hidden: () => !this.$hasPerm('accounts.view_account') || !this.$hasPerm('perms.change_assetpermission')
           }
         ]
       }
     }
   },
   methods: {
-    TabClick(tab) {
+    handleTabClick(tab) {
       if (tab.name !== 'AssetPermissionDetail') {
         this.$set(this.config, 'hasRightSide', false)
       } else {
@@ -58,7 +77,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-
-</style>

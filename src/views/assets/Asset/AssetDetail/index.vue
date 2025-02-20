@@ -1,7 +1,12 @@
 <template>
-  <GenericDetailPage :object.sync="TaskDetail" :active-menu.sync="config.activeMenu" v-bind="config" v-on="$listeners">
+  <GenericDetailPage
+    :active-menu.sync="config.activeMenu"
+    :object.sync="asset"
+    v-bind="config"
+    v-on="$listeners"
+  >
     <keep-alive>
-      <component :is="config.activeMenu" :object="TaskDetail" />
+      <component :is="config.activeMenu" :exclude="'Account'" :object="asset" />
     </keep-alive>
   </GenericDetailPage>
 </template>
@@ -10,8 +15,9 @@
 import { GenericDetailPage, TabPage } from '@/layout/components'
 import Detail from './Detail.vue'
 import Account from './Account.vue'
-import SystemUserList from './SystemUser.vue'
 import PermUserList from './PermUser.vue'
+import AssetSession from './AssetSession.vue'
+import AssetCommand from './AssetCommand.vue'
 
 export default {
   name: 'AssetListDetail',
@@ -20,45 +26,58 @@ export default {
     TabPage,
     Detail,
     Account,
-    SystemUserList,
-    PermUserList
+    PermUserList,
+    AssetSession,
+    AssetCommand
   },
   data() {
     return {
-      TaskDetail: {},
+      asset: {},
       config: {
         activeMenu: 'Detail',
         submenu: [
           {
-            title: this.$t('assets.AssetDetail'),
+            title: this.$t('Basic'),
             name: 'Detail'
           },
           {
-            title: this.$t('assets.SystemUser'),
-            name: 'SystemUserList',
-            hidden: () => !this.$hasPerm('assets.view_authbook')
-          },
-          {
-            title: this.$t('assets.AccountList'),
+            title: this.$t('AccountList'),
             name: 'Account',
-            hidden: () => !this.$hasPerm('assets.view_authbook')
+            hidden: () => !this.$hasPerm('accounts.view_account')
           },
           {
-            title: this.$t('assets.PermUserList'),
+            title: this.$t('PermUserList'),
             name: 'PermUserList',
             hidden: () => !this.$hasPerm('perms.view_assetpermission')
+          },
+          {
+            title: this.$t('SessionList'),
+            name: 'AssetSession',
+            hidden: () => !this.$hasPerm('terminal.view_session')
+          },
+          {
+            title: this.$t('Commands'),
+            name: 'AssetCommand',
+            hidden: () => !this.$hasPerm('terminal.view_command')
           }
         ],
         hasRightSide: true,
-        getObjectName: function(obj) {
-          return obj.hostname + '(' + obj.ip + ')'
+        actions: {
+          updateCallback: () => {
+            const category = this.asset.category.value || 'host'
+            const routerName = _.capitalize(category) + 'Update'
+            this.$router.push({
+              name: routerName,
+              params: { id: this.$route.params.id },
+              query: {
+                platform: this.asset.platform.id,
+                type: this.asset.type.value
+              }
+            })
+          }
         }
       }
     }
   }
 }
 </script>
-
-<style scoped>
-
-</style>

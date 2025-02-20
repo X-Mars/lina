@@ -1,26 +1,28 @@
 <template>
   <Page v-bind="$attrs">
     <div v-if="!loading">
-      <el-alert v-if="!hasValidLicense" type="success">
-        {{ this.$t('setting.ImportLicenseTip') }}
+      <el-alert v-if="publicSettings.XPACK_ENABLED" type="success">
+        {{ this.$t('ImportLicenseTip') }}
       </el-alert>
       <el-row :gutter="20">
-        <el-col :md="14" :sm="24">
-          <DetailCard :title="cardTitle" :items="detailItems" />
+        <el-col :md="15" :sm="24">
+          <DetailCard :items="detailItems" :title="cardTitle" />
         </el-col>
-        <el-col :md="10" :sm="24">
-          <QuickActions type="primary" :actions="quickActions" />
+        <el-col :md="9" :sm="24">
+          <QuickActions :actions="quickActions" type="primary" />
         </el-col>
       </el-row>
       <Dialog
+        :title="$tc('ImportLicense')"
         :visible.sync="dialogLicenseImport"
         top="20vh"
-        :title="this.$t('setting.ImportLicense')"
+        width="600px"
         @cancel="dialogLicenseImport = false"
         @confirm="importLicense"
       >
-        {{ this.$t('setting.LicenseFile') }}
-        <br>
+        <div style="padding-bottom: 10px">
+          {{ this.$t('LicenseFile') }}
+        </div>
         <input type="file" @change="fileChange">
       </Dialog>
     </div>
@@ -29,8 +31,8 @@
 
 <script>
 import Page from '@/layout/components/Page'
-import { QuickActions, Dialog } from '@/components'
-import DetailCard from '@/components/DetailCard/index'
+import { Dialog, QuickActions } from '@/components'
+import DetailCard from '@/components/Cards/DetailCard/index'
 import { importLicense } from '@/api/settings'
 import { mapGetters } from 'vuex'
 
@@ -45,7 +47,8 @@ export default {
   props: {
     object: {
       type: Object,
-      default: () => {}
+      default: () => {
+      }
     }
   },
   data() {
@@ -56,10 +59,10 @@ export default {
       licenseFile: {},
       quickActions: [
         {
-          title: this.$t('setting.ImportLicense'),
+          title: this.$t('ImportLicense'),
           attrs: {
             type: 'primary',
-            label: this.$t('setting.import'),
+            label: this.$t('Import'),
             disabled: false
           },
           callbacks: {
@@ -67,10 +70,10 @@ export default {
           }
         },
         {
-          title: this.$t('setting.technologyConsult'),
+          title: this.$t('TechnologyConsult'),
           attrs: {
             type: 'primary',
-            label: this.$t('setting.consult')
+            label: this.$t('Consult')
           },
           callbacks: {
             click: this.consultAction
@@ -90,31 +93,49 @@ export default {
       if (!this.hasValidLicense) {
         return [
           {
-            key: this.$t('setting.License'),
-            value: this.$t('setting.communityEdition')
+            key: this.$t('Version'),
+            value: this.$t('CommunityEdition')
+          },
+          {
+            key: this.$t('Expired'),
+            value: this.$t('Never')
+          },
+          {
+            key: this.$t('License'),
+            value: 'GPLv3'
+          },
+          {
+            key: 'Github',
+            formatter: () => {
+              return (<a href='https://github.com/jumpserver/jumpserver' target='_blank'> JumpServer </a>)
+            }
           }
         ]
       }
       return [
         {
-          key: this.$t('setting.SubscriptionID'),
-          value: this.licenseData.subscription_id
+          key: this.$t('SerialNumber'),
+          value: this.licenseData?.serial_no || ''
         },
         {
-          key: this.$t('setting.Corporation'),
+          key: this.$t('Corporation'),
           value: this.licenseData.corporation
         },
         {
-          key: this.$t('setting.Expired'),
+          key: this.$t('Expired'),
           value: this.licenseData.date_expired
         },
         {
-          key: this.$t('setting.AssetCount'),
+          key: this.$t('AssetsOfNumber'),
           value: this.licenseData.asset_count !== null ? this.licenseData.asset_count + '' : ''
         },
         {
-          key: this.$t('setting.Edition'),
+          key: this.$t('Edition'),
           value: this.licenseData.edition
+        },
+        {
+          key: this.$t('Comment'),
+          value: this.licenseData?.remark || ''
         }
       ]
     }

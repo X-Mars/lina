@@ -1,15 +1,12 @@
 <template>
-  <el-row :gutter="20">
-    <el-col :md="16" :sm="24">
-      <ListTable :table-config="tableConfig" :header-actions="headerActions" />
-    </el-col>
-  </el-row>
+  <ListTable :header-actions="headerActions" :table-config="tableConfig" />
 </template>
 
 <script>
-import ListTable from '@/components/ListTable'
+import ListTable from '@/components/Table/ListTable'
 import { OutputExpandFormatter } from '../formatters'
-import { toSafeLocalDateStr } from '@/utils/common'
+import { toSafeLocalDateStr } from '@/utils/time'
+
 export default {
   name: 'SessionCommands',
   components: {
@@ -34,18 +31,19 @@ export default {
             sortable: 'custom'
           },
           input: {
-            label: this.$t('sessions.command'),
+            label: this.$t('Command'),
             sortable: 'custom'
           },
           timestamp: {
-            label: this.$t('sessions.date'),
             width: '160px',
             sortable: 'custom',
             formatter: function(row) {
               return toSafeLocalDateStr(row.timestamp * 1000)
             }
+          },
+          actions: {
+            has: false
           }
-
         }
       },
       headerActions: {

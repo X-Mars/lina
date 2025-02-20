@@ -1,36 +1,49 @@
 <template>
   <el-row :gutter="20">
-    <el-col :md="14" :sm="24">
-      <DetailCard :items="detailCardItems" />
+    <el-col :md="15" :sm="24">
+      <AutoDetailCard v-bind="basicInfoConfig" />
+      <AutoDetailCard v-if="isShowSpecInfo" v-bind="specInfoConfig" />
+      <AutoDetailCard v-bind="customInfoConfig" />
+      <AutoDetailCard v-bind="gatheredInfoConfig" />
     </el-col>
-    <el-col :md="10" :sm="24">
-      <QuickActions type="primary" :actions="quickActions" />
-      <RelationCard ref="NodeRelation" v-perms="'assets.change_asset'" type="info" style="margin-top: 15px" v-bind="nodeRelationConfig" />
-      <LabelCard v-if="$hasPerm('assets.view_label')" type="warning" style="margin-top: 15px" v-bind="labelConfig" />
+    <el-col :md="9" :sm="24">
+      <QuickActions :actions="quickActions" type="primary" />
+      <RelationCard
+        ref="NodeRelation"
+        v-perms="'assets.change_asset'"
+        style="margin-top: 15px"
+        type="info"
+        v-bind="nodeRelationConfig"
+      />
+      <RelationCard
+        ref="LabelRelation"
+        v-perms="'assets.change_asset'"
+        style="margin-top: 15px"
+        type="warning"
+        v-bind="labelConfig"
+      />
     </el-col>
   </el-row>
 </template>
 
 <script>
-import DetailCard from '@/components/DetailCard'
-import RelationCard from '@/components/RelationCard'
+import AutoDetailCard from '@/components/Cards/DetailCard/auto'
+import RelationCard from '@/components/Cards/RelationCard'
 import QuickActions from '@/components/QuickActions'
-import LabelCard from './components/LabelCard'
-import { toSafeLocalDateStr } from '@/utils/common'
 import { openTaskPage } from '@/utils/jms'
 
 export default {
   name: 'Detail',
   components: {
-    DetailCard,
+    AutoDetailCard,
     QuickActions,
-    RelationCard,
-    LabelCard
+    RelationCard
   },
   props: {
     object: {
       type: Object,
-      default: () => {}
+      default: () => {
+      }
     }
   },
   data() {
@@ -38,10 +51,10 @@ export default {
     return {
       quickActions: [
         {
-          title: this.$t('assets.IsActive'),
-          type: 'switcher',
+          title: this.$t('IsActive'),
+          type: 'switch',
           attrs: {
-            label: this.$t('common.Test'),
+            label: this.$t('Test'),
             model: this.object.is_active,
             disabled: !vm.$hasPerm('assets.change_asset')
           },
@@ -51,19 +64,22 @@ export default {
                 `/api/v1/assets/assets/${this.object.id}/`,
                 { is_active: val }
               ).then(res => {
-                this.$message.success(this.$t('common.updateSuccessMsg'))
+                this.$message.success(this.$tc('UpdateSuccessMsg'))
               }).catch(err => {
-                this.$message.error(this.$t('common.updateErrorMsg' + ' ' + err))
+                this.$message.error(this.$tc('UpdateErrorMsg' + ' ' + err))
               })
             }.bind(this)
           }
         },
         {
-          title: this.$t('assets.RefreshHardware'),
+          title: this.$t('RefreshHardware'),
           attrs: {
             type: 'primary',
-            label: this.$t('assets.Refresh'),
-            disabled: !vm.$hasPerm('assets.refresh_assethardwareinfo')
+            label: this.$t('Refresh'),
+            disabled: !vm.$hasPerm('assets.refresh_assethardwareinfo') ||
+              !this.object['auto_config'].gather_facts_enabled ||
+              !this.object['auto_config'].ansible_enabled ||
+              this.$store.getters.currentOrgIsRoot
           },
           callbacks: {
             click: function() {
@@ -72,17 +88,19 @@ export default {
                 { action: 'refresh' }
               ).then(res => {
                 openTaskPage(res['task'])
-              }
-              )
+              })
             }.bind(this)
           }
         },
         {
-          title: this.$t('assets.TestAssetsConnective'),
+          title: this.$t('TestAssetsConnective'),
           attrs: {
             type: 'primary',
-            label: this.$t('assets.Test'),
-            disabled: !vm.$hasPerm('assets.test_assetconnectivity')
+            label: this.$t('Test'),
+            disabled: !vm.$hasPerm('assets.test_assetconnectivity') ||
+              !this.object['auto_config'].ansible_enabled ||
+              !this.object['auto_config']['ping_enabled'] ||
+              this.$store.getters.currentOrgIsRoot
           },
           callbacks: {
             click: function() {
@@ -99,14 +117,14 @@ export default {
       ],
       nodeRelationConfig: {
         icon: 'fa-info',
-        title: this.$t('assets.Node'),
+        title: this.$t('Node'),
         objectsAjax: {
           url: '/api/v1/assets/nodes/',
           transformOption: (item) => {
             return { label: item.full_value, value: item.id }
           }
         },
-        hasObjectsId: this.object.nodes,
+        hasObjectsId: this.object.nodes?.map(i => i.id) || [],
         performAdd: (items) => {
           const newData = []
           const value = this.$refs.NodeRelation.iHasObjects
@@ -133,97 +151,86 @@ export default {
         }
       },
       labelConfig: {
-        title: this.$t('assets.Label'),
-        labels: this.object.labels
+        icon: 'fa-info',
+        title: this.$t('Tags'),
+        allowCreate: true,
+        objectsAjax: {
+          url: '/api/v1/labels/labels/',
+          transformOption: (item) => {
+            const label = `${item.name}: ${item.value}`
+            return { label: label, value: item.id }
+          }
+        },
+        hasObjectsId: this.object.labels.map(item => item.id),
+        performAdd: (items) => {
+          const newData = []
+          const value = this.$refs.LabelRelation.iHasObjects
+          value.map(v => newData.push(v.label))
+          const relationUrl = `/api/v1/assets/assets/${this.object.id}/`
+          items.map(v => newData.push(v.label))
+          return this.$axios.patch(relationUrl, { labels: newData })
+        },
+        performDelete: (item) => {
+          const itemId = item.value
+          const value = this.$refs.LabelRelation.iHasObjects
+          const newData = value.filter(v => v.value !== itemId).map(v => v.value)
+          const relationUrl = `/api/v1/assets/assets/${this.object.id}/`
+          return this.$axios.patch(relationUrl, { labels: newData })
+        }
+      },
+      basicInfoConfig: {
+        url: `/api/v1/assets/assets/${this.object.id}/`,
+        object: this.object,
+        fields: [
+          'id', 'name', 'category', 'type',
+          'address', 'platform', 'protocols', 'domain',
+          'is_active', 'date_created', 'date_updated',
+          'created_by', 'comment'
+        ],
+        formatters: {
+          protocols: () => {
+            return vm.object.protocols.map(
+              i => (
+                this.object.address.startsWith('https://') ? 'https' : i.name
+              ) + '/' + i.port
+            ).join(', ')
+          }
+        }
+      },
+      specInfoConfig: {
+        title: this.$t('SpecificInfo'),
+        url: `/api/v1/assets/assets/${this.object.id}/`,
+        object: this.object,
+        nested: 'spec_info',
+        showUndefine: true
+      },
+      customInfoConfig: {
+        title: this.$t('CustomInfo'),
+        url: `/api/v1/assets/assets/${this.object.id}/`,
+        object: this.object,
+        nested: 'custom_info',
+        showUndefine: false
+      },
+      gatheredInfoConfig: {
+        url: `/api/v1/assets/hosts/${this.object.id}/`,
+        title: this.$t('HardwareInfo'),
+        object: this.object,
+        nested: 'gathered_info',
+        showUndefine: false
       }
     }
   },
   computed: {
-    detailCardItems() {
-      return [
-        {
-          key: this.$t('assets.Hostname'),
-          value: this.object.hostname
-        },
-        {
-          key: this.$t('assets.ip'),
-          value: this.object.ip
-        },
-        {
-          key: this.$t('assets.Protocols'),
-          value: this.object.protocols.toString()
-        },
-        {
-          key: this.$t('assets.PublicIp'),
-          value: this.object.public_ip
-        },
-        {
-          key: this.$t('assets.AdminUser'),
-          value: this.object.admin_user_display
-        },
-        {
-          key: this.$t('assets.Domain'),
-          value: this.object.domain_display
-        },
-        {
-          key: this.$t('assets.Vendor'),
-          value: this.object.vendor
-        },
-        {
-          key: this.$t('assets.Model'),
-          value: this.object.model
-        },
-        {
-          key: this.$t('assets.Cpu'),
-          value: this.object.cpu_model
-        },
-        {
-          key: this.$t('assets.Memory'),
-          value: this.object.memory
-        },
-        {
-          key: this.$t('assets.Disk'),
-          value: this.object.disk_info
-        },
-        {
-          key: this.$t('assets.Platform'),
-          value: this.object.platform
-        },
-        {
-          key: this.$t('assets.Os'),
-          value: this.object.os_arch
-        },
-        {
-          key: this.$t('assets.IsActive'),
-          value: this.object.is_active
-        },
-        {
-          key: this.$t('assets.SerialNumber'),
-          value: this.object.sn
-        },
-        {
-          key: this.$t('assets.AssetNumber'),
-          value: this.object.number
-        },
-        {
-          key: this.$t('assets.DateJoined'),
-          value: toSafeLocalDateStr(this.object.date_created)
-        },
-        {
-          key: this.$t('assets.CreatedBy'),
-          value: this.object.created_by
-        },
-        {
-          key: this.$t('assets.Comment'),
-          value: this.object.comment
-        }
-      ]
+    isShowSpecInfo() {
+      const object = this.object
+      const type = object.type.value
+      const autofill = object.spec_info?.autofill
+      return !(type === 'website' && autofill === 'script') && Object.keys(object.spec_info || {}).length > 0
     }
   },
   mounted() {
   },
-  methods: {
-  }
+  methods: {}
 }
 </script>
 

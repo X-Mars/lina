@@ -1,61 +1,119 @@
 <template>
   <div>
     <el-row :gutter="24">
-      <el-col :md="16" :sm="24">
-        <AccountListTable ref="ListTable" :url="assetUserUrl" :has-import="false" :has-clone="false" :has-left-actions="true" />
+      <el-col :md="15" :sm="24">
+        <AccountListTable
+          ref="ListTable"
+          :asset="object"
+          :columns-default="columnsDefault"
+          :has-clone="false"
+          :has-import="false"
+          :has-left-actions="true"
+          :header-extra-actions="headerExtraActions"
+          :url="iUrl"
+          v-bind="$attrs"
+        />
+        <AccountTemplateDialog
+          v-if="templateDialogVisible"
+          :asset="object"
+          :show-create="false"
+          :visible.sync="templateDialogVisible"
+          @onConfirm="onConfirm"
+        />
       </el-col>
-      <el-col :md="8" :sm="24">
-        <QuickActions type="primary" :actions="quickActions" />
+      <el-col :md="9" :sm="24">
+        <QuickActions :actions="quickActions" :title="title" type="primary" />
       </el-col>
     </el-row>
   </div>
 </template>
 
 <script>
-import QuickActions from '@/components/QuickActions'
 import { AccountListTable } from '@/components'
+import QuickActions from '@/components/QuickActions'
+import AccountTemplateDialog from '@/views/assets/Asset/AssetCreateUpdate/components/AccountTemplateDialog'
 import { openTaskPage } from '@/utils/jms'
 
 export default {
   name: 'Detail',
   components: {
+    QuickActions,
     AccountListTable,
-    QuickActions
+    AccountTemplateDialog
   },
   props: {
     object: {
       type: Object,
-      default: () => {}
+      default: () => {
+      }
+    },
+    url: {
+      type: String,
+      default: ''
+    },
+    extraQuickActions: {
+      type: Array,
+      default: () => {
+        return []
+      }
     }
   },
   data() {
     return {
-      assetUserUrl: `/api/v1/assets/accounts/?asset=${this.object.id}`,
-      quickActions: [
+      title: this.$t('Test'),
+      templateDialogVisible: false,
+      columnsDefault: ['name', 'username', 'asset'],
+      headerExtraActions: [
         {
-          title: this.$t('assets.TestAssetsConnective'),
-          attrs: {
-            type: 'primary',
-            label: this.$t('assets.Test')
-          },
-          callbacks: {
-            click: function() {
-              this.$axios.post(
-                `/api/v1/assets/accounts/tasks/?asset=${this.object.id}`,
-                { action: 'test' }
-              ).then(res => {
-                openTaskPage(res['task'])
-              }
-              )
-            }.bind(this)
+          name: this.$t('AccountTemplate'),
+          title: this.$t('AccountTemplate'),
+          can: () => this.$hasPerm('accounts.view_accounttemplate') && !this.$store.getters.currentOrgIsRoot,
+          callback: () => {
+            this.templateDialogVisible = true
           }
         }
+      ],
+      quickActions: [
+        {
+          title: this.$t('BatchTest'),
+          attrs: {
+            type: 'primary',
+            label: this.$tc('Test'),
+            disabled: ['clickhouse', 'redis', 'website', 'chatgpt'].indexOf(this.object.type.value) !== -1 ||
+              this.$store.getters.currentOrgIsRoot
+          },
+          callbacks: Object.freeze({
+            click: () => {
+              this.$axios.post(
+                `/api/v1/accounts/accounts/tasks/`,
+                { action: 'verify', assets: [this.object.id] }
+              ).then(res => {
+                openTaskPage(res['task'])
+              })
+            }
+          })
+        },
+        ...this.extraQuickActions
       ]
+    }
+  },
+  computed: {
+    iUrl() {
+      return this.url || `/api/v1/accounts/accounts/?asset=${this.object.id}`
+    }
+  },
+  methods: {
+    onConfirm(data) {
+      data = data?.map(i => {
+        i.asset = this.object.id
+        return i
+      })
+      this.$axios.post(`/api/v1/accounts/accounts/`, data).then(() => {
+        this.templateDialogVisible = false
+        this.$refs.ListTable.addAccountSuccess()
+        this.$message.success(this.$tc('AddSuccessMsg'))
+      })
     }
   }
 }
 </script>
-
-<style lang='less' scoped>
-
-</style>

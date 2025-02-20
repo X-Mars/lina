@@ -1,1 +1,19 @@
-<svg t="1659513943772" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5163" width="200" height="200"><path d="M1024 146.285714v731.428572H0V146.285714h1024z m-149.942857 94.573715L512 602.88l-362.057143-362.057143L98.267429 292.571429 512 706.340571 925.769143 292.571429l-51.748572-51.712z" fill="#7c7e7f" p-id="5164"></path></svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="42px" height="38px" viewBox="0 0 42 38" version="1.1" xmlns="http://www.w3.org/2000/svg"
+>
+    <polygon id="路径" stroke="#FFFFFF" points="0 37 40 37 40 13 0 13"></polygon>
+    <polygon id="路径" stroke-opacity="0.2" stroke="#FFFFFF" points="0 37 40 37 40 13 0 13"></polygon>
+    <polyline id="路径" stroke="#FFFFFF" stroke-linecap="round" points="0 13 20 28 40 13"></polyline>
+    <polyline id="路径" stroke-opacity="0.2" stroke="#FFFFFF" stroke-linecap="round"
+              points="0 13 20 28 40 13"></polyline>
+    <polyline id="路径" stroke="#FFFFFF" stroke-linecap="round" points="20 13 0 13 0 28"></polyline>
+    <polyline id="路径" stroke-opacity="0.2" stroke="#FFFFFF" stroke-linecap="round"
+              points="20 13 0 13 0 28"></polyline>
+    <polyline id="路径" stroke="#FFFFFF" stroke-linecap="round" points="40 28 40 13 20 13"></polyline>
+    <polyline id="路径" stroke-opacity="0.2" stroke="#FFFFFF" stroke-linecap="round"
+              points="40 28 40 13 20 13"></polyline>
+    <line x1="8" y1="7" x2="32" y2="7" id="路径" stroke="#FFFFFF" stroke-linecap="round"></line>
+    <line x1="8" y1="7" x2="32" y2="7" id="路径" stroke-opacity="0.2" stroke="#FFFFFF" stroke-linecap="round"></line>
+    <line x1="12" y1="1" x2="28" y2="1" id="路径" stroke="#FFFFFF" stroke-linecap="round"></line>
+    <line x1="12" y1="1" x2="28" y2="1" id="路径" stroke-opacity="0.2" stroke="#000000" stroke-linecap="round"></line>
+</svg>

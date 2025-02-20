@@ -11,7 +11,12 @@ export default {
   name: 'WebTerminal',
   computed: {
     webTerminalUrl() {
-      return `${BASE_URL}/luna/?_=${Date.now()}`
+      const oid = this.$store.getters.currentOrg ? this.$store.getters.currentOrg.id : ''
+      let url = `${BASE_URL}/luna/?_=${Date.now()}${oid ? `&oid=${oid}` : ''}`
+      if (process.env.NODE_ENV !== 'production') {
+        url = url.replace('9528', '4200')
+      }
+      return url
     }
   }
 }

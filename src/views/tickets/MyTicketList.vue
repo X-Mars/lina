@@ -1,10 +1,11 @@
 <template>
-  <BaseTicketList :url="url" :has-more-actions="true" />
+  <BaseTicketList :url="url" v-bind="$data" />
 </template>
 
 <script>
 import BaseTicketList from './BaseTicketList'
 import { mapGetters } from 'vuex'
+
 export default {
   name: 'MyTicketList',
   components: {
@@ -12,6 +13,19 @@ export default {
   },
   data() {
     return {
+      extraTicketAction: {
+        moreCreates: {
+          dropdown: [
+            {
+              name: 'RequestAssetPerm',
+              title: this.$t('RequestAssetPerm'),
+              callback: () => this.$router.push({
+                name: 'RequestAssetPermTicketCreateUpdate'
+              })
+            }
+          ]
+        }
+      }
     }
   },
   computed: {

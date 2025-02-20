@@ -3,302 +3,445 @@ import empty from '@/layout/empty'
 
 export default [
   {
-    path: 'authbook',
+    path: 'accounts',
     component: empty,
+    name: 'Account',
     meta: {
-      title: i18n.t('route.AssetAccount'),
-      app: 'assets',
-      licenseRequired: true
+      title: i18n.t('BaseAssetAccount'),
+      app: 'accounts',
+      icon: 'accounts',
+      permissions: ['accounts.view_account']
     },
-    redirect: '',
+    redirect: {
+      name: 'AssetAccountList'
+    },
     children: [
       {
         path: '',
         name: 'AssetAccountList',
-        component: () => import('@/views/accounts/AssetAccount/AssetAccountList'),
+        component: () => import('@/views/accounts/Account/index.vue'),
         meta: {
-          title: i18n.t('route.AssetAccount'),
-          app: 'assets',
-          permissions: ['assets.view_authbook']
+          title: i18n.t('AssetAccount'),
+          app: 'accounts',
+          permissions: ['accounts.view_account']
         }
       },
       {
-        path: 'history',
-        name: 'AssetAccountHistoryList',
-        component: () => import('@/views/accounts/AssetAccount/AssetAccountHistoryList'),
-        hidden: true,
-        meta: {
-          title: i18n.t('route.AssetHistoryAccount'),
-          permissions: ['assets.view_assethistoryaccount']
-        }
-      }
-    ]
-  },
-  {
-    path: 'application-accounts',
-    component: empty,
-    redirect: '',
-    meta: {
-      title: i18n.t('route.AssetAccount'),
-      permissions: ['applications.view_account'],
-      app: 'applications',
-      resource: 'account',
-      licenseRequired: true
-    },
-    children: [
-      {
-        path: '',
-        name: 'ApplicationAccountList',
-        component: () => import('@/views/accounts/ApplicationAccount/ApplicationAccountList'),
-        meta: {
-          title: i18n.t('route.ApplicationAccount'),
-          permissions: ['applications.view_account'],
-          resource: 'account'
-        }
-      }
-    ]
-  },
-  {
-    path: 'gathered-user',
-    component: empty,
-    redirect: '',
-    meta: {
-      title: i18n.t('xpack.GatherUser.GatherUserList'),
-      app: 'assets',
-      licenseRequired: true
-    },
-    children: [
-      {
-        path: '',
-        component: () => import('@/views/accounts/GatheredUser/index'),
-        name: 'GatherUserListIndex',
-        meta: {
-          title: i18n.t('xpack.GatherUser.GatherUser'),
-          permissions: ['assets.view_gathereduser|xpack.view_gatherusertask']
-        }
-      },
-      {
-        path: '',
-        component: () => import('@/views/accounts/GatheredUser/GatheredUserList'),
-        name: 'GatherUserList',
-        hidden: true,
-        meta: {
-          title: i18n.t('xpack.GatherUser.GatherUserList'),
-          activeMenu: '/accounts/gathered-user'
-        }
-      },
-      {
-        path: 'tasks/:id',
-        component: () => import('@/views/accounts/GatheredUser/TaskDetail/index'),
-        name: 'GatherUserTaskDetail',
-        hidden: true,
-        meta: {
-          title: i18n.t('xpack.GatherUser.GatherUserTaskDetail'),
-          permissions: ['xpack.view_gatherusertask']
-        }
-      },
-      {
-        path: 'tasks/create',
-        component: () => import('@/views/accounts/GatheredUser/TaskCreateUpdate'),
-        name: 'GatherUserTaskCreate',
-        hidden: true,
-        meta: {
-          title: i18n.t('xpack.GatherUser.GatherUserTaskCreate'),
-          permissions: ['xpack.add_gatherusertask']
-        }
-      },
-      {
-        path: 'tasks/:id/update',
-        component: () => import('@/views/accounts/GatheredUser/TaskCreateUpdate'),
-        name: 'GatherUserTaskUpdate',
-        hidden: true,
-        meta: {
-          title: i18n.t('xpack.GatherUser.GatherUserTaskUpdate'),
-          action: 'update',
-          permissions: ['xpack.change_gatherusertask'],
-          activeMenu: '/accounts/gathered-user'
-        }
-      }
-    ]
-  },
-  {
-    path: 'change-auth-plan',
-    component: empty,
-    redirect: '',
-    meta: {
-      title: i18n.t('xpack.ChangeAuthPlan.ChangeAuthPlan'),
-      app: 'xpack',
-      licenseRequired: true
-    },
-    children: [
-      {
-        path: '',
-        component: () => import('@/views/accounts/ChangeAuthPlan/index.vue'),
-        name: 'ChangeAuthPlanIndex',
-        meta: {
-          title: i18n.t('xpack.ChangeAuthPlan.ChangeAuthPlan'),
-          permissions: ['xpack.view_changeauthplan|xpack.view_applicationchangeauthplan']
-        }
-      },
-      {
-        path: 'plan',
-        component: () => import('@/views/accounts/ChangeAuthPlan/AssetChangeAuthPlan/ChangeAuthPlanList.vue'),
-        name: 'AssetChangeAuthPlanList',
-        meta: {
-          title: i18n.t('xpack.ChangeAuthPlan.AssetChangeAuthPlan'),
-          permissions: ['xpack.view_changeauthplan']
-        },
-        hidden: true
-      },
-      {
-        path: 'plan/create',
-        component: () => import('@/views/accounts/ChangeAuthPlan/AssetChangeAuthPlan/ChangeAuthPlanCreateUpdate.vue'),
-        name: 'AssetChangeAuthPlanCreate',
-        hidden: true,
-        meta: {
-          title: i18n.t('xpack.ChangeAuthPlan.AssetChangeAuthPlanCreate'),
-          permissions: ['xpack.add_changeauthplan']
-        }
-      },
-      {
-        path: 'plan/:id/update',
-        component: () => import('@/views/accounts/ChangeAuthPlan/AssetChangeAuthPlan/ChangeAuthPlanCreateUpdate.vue'),
-        name: 'AssetChangeAuthPlanUpdate',
-        hidden: true,
-        meta: {
-          title: i18n.t('xpack.ChangeAuthPlan.AssetChangeAuthPlanUpdate'),
-          permissions: ['xpack.change_changeauthplan']
-        }
-      },
-      {
-        path: 'plan/:id',
-        component: () => import('@/views/accounts/ChangeAuthPlan/AssetChangeAuthPlan/ChangeAuthPlanDetail/index.vue'),
-        name: 'AssetChangeAuthPlanDetail',
-        hidden: true,
-        meta: {
-          title: i18n.t('xpack.ChangeAuthPlan.AssetChangeAuthPlan'),
-          permissions: ['xpack.view_changeauthplan']
-        }
-      },
-      {
-        path: 'plan-execution/:id',
-        component: () => import('@/views/accounts/ChangeAuthPlan/AssetChangeAuthPlan/ChangeAuthPlanDetail/ChangeAuthPlanExecution/ChangeAuthPlanExecutionDetail/index.vue'),
-        name: 'ChangeAuthPlanExecutionDetail',
-        hidden: true,
-        meta: {
-          title: i18n.t('xpack.ChangeAuthPlan.ExecutionDetail'),
-          permissions: ['xpack.view_changeauthplanexecution']
-        }
-      },
-      {
-        path: 'app-plan',
-        component: () => import('@/views/accounts/ChangeAuthPlan/AppChangeAuthPlan/AppChangeAuthPlanList.vue'),
-        name: 'AppChangeAuthPlanList',
-        meta: {
-          title: i18n.t('xpack.ChangeAuthPlan.AppChangeAuthPlan'),
-          permissions: ['xpack.view_applicationchangeauthplan']
-        },
-        hidden: true
-      },
-      {
-        path: 'app-plan/create',
-        component: () => import('@/views/accounts/ChangeAuthPlan/AppChangeAuthPlan/AppChangeAuthPlanCreateUpdate.vue'),
-        name: 'AppChangeAuthPlanCreate',
-        meta: {
-          title: i18n.t('xpack.ChangeAuthPlan.AppChangeAuthPlanCreate'),
-          permissions: ['xpack.add_applicationchangeauthplan']
-        },
-        hidden: true
-      },
-      {
-        path: 'app-plan/:id',
-        component: () => import('@/views/accounts/ChangeAuthPlan/AppChangeAuthPlan/ChangeAuthPlanDetail/index.vue'),
-        name: 'AppChangeAuthPlanDetail',
-        meta: {
-          title: i18n.t('xpack.ChangeAuthPlan.AppChangeAuthPlan'),
-          permissions: ['xpack.view_applicationchangeauthplan']
-        },
-        hidden: true
-      },
-      {
-        path: 'app-plan/:id/update',
-        component: () => import('@/views/accounts/ChangeAuthPlan/AppChangeAuthPlan/AppChangeAuthPlanCreateUpdate.vue'),
-        name: 'AppChangeAuthPlanUpdate',
-        meta: {
-          title: i18n.t('xpack.ChangeAuthPlan.AppChangeAuthPlanUpdate'),
-          permissions: ['xpack.change_applicationchangeauthplan']
-        },
-        hidden: true
-      },
-      {
-        path: 'app-plan-execution/:id',
-        component: () => import('@/views/accounts/ChangeAuthPlan/AppChangeAuthPlan/ChangeAuthPlanDetail/AppChangeAuthPlanExecution/ChangeAuthPlanExecutionDetail/index.vue'),
-        name: 'AppChangeAuthPlanExecutionDetail',
-        meta: {
-          title: i18n.t('xpack.ChangeAuthPlan.ExecutionDetail'),
-          permissions: ['xpack.view_applicationchangeauthplanexecution']
-        },
+        path: ':id',
+        component: () => import('@/views/accounts/Account/AccountDetail/index.vue'),
+        name: 'AssetAccountDetail',
+        meta: { title: i18n.t('AssetAccountDetail') },
         hidden: true
       }
     ]
   },
   {
-    path: 'backup',
+    path: 'virtual-accounts',
     component: empty,
-    redirect: '',
     meta: {
-      title: i18n.t('xpack.AccountBackupPlan.AccountBackupPlan'),
-      app: 'assets',
-      resource: 'accountbackupplan',
-      licenseRequired: true
+      title: i18n.t('VirtualAccount'),
+      app: 'accounts',
+      permissions: ['accounts.view_virtualaccount']
     },
+    hidden: true,
+    redirect: '/console/accounts/accounts',
     children: [
-      {
-        path: '',
-        component: () => import('@/views/accounts/AccountBackupPlan/AccountBackupPlanList'),
-        name: 'AccountBackupPlanIndex',
-        meta: { title: i18n.t('xpack.AccountBackupPlan.AccountBackupPlan') }
-      },
-      {
-        path: '',
-        component: () => import('@/views/accounts/AccountBackupPlan/AccountBackupPlanList.vue'),
-        name: 'AccountBackupPlanList',
-        meta: { title: i18n.t('xpack.AccountBackupPlan.AccountBackupPlan') },
-        hidden: true
-      },
-      {
-        path: 'create',
-        component: () => import('@/views/accounts/AccountBackupPlan/AccountBackupPlanCreateUpdate.vue'),
-        name: 'AccountBackupPlanCreate',
-        meta: {
-          title: i18n.t('xpack.AccountBackupPlan.AccountBackupPlanCreate'),
-          action: 'create'
-        },
-        hidden: true
-      },
       {
         path: ':id/update',
-        component: () => import('@/views/accounts/AccountBackupPlan/AccountBackupPlanCreateUpdate.vue'),
-        name: 'AccountBackupPlanUpdate',
+        component: () => import('@/views/accounts/VirtualAccount/VirtualUpdate.vue'),
+        name: 'VirtualAccountUpdate',
         meta: {
-          title: i18n.t('xpack.AccountBackupPlan.AccountBackupPlanUpdate'),
+          title: i18n.t('VirtualAccountUpdate'),
+          activeMenu: '/console/accounts/accounts',
           action: 'update'
         },
         hidden: true
       },
       {
         path: ':id',
-        component: () => import('@/views/accounts/AccountBackupPlan/AccountBackupPlanDetail/index.vue'),
-        name: 'AccountBackupPlanDetail',
-        meta: { title: i18n.t('xpack.AccountBackupPlan.AccountBackupPlan') },
+        component: () => import('@/views/accounts/VirtualAccount/VirtualDetail/index.vue'),
+        name: 'VirtualAccountDetail',
+        meta: {
+          title: i18n.t('VirtualAccountDetail'),
+          activeMenu: '/console/accounts/accounts'
+        }
+      }
+    ]
+  },
+  {
+    path: 'account-template',
+    component: empty,
+    redirect: {
+      name: 'AccountTemplateList'
+    },
+    meta: {
+      title: i18n.t('AccountTemplate'),
+      app: 'accounts',
+      icon: 'template',
+      permissions: ['accounts.view_accounttemplate']
+    },
+    children: [
+      {
+        path: '',
+        name: 'AccountTemplateList',
+        component: () => import('@/views/accounts/AccountTemplate/AccountTemplateList'),
+        meta: {
+          menuTitle: i18n.t('MenuAccountTemplates'),
+          title: i18n.t('AccountTemplateList'),
+          permissions: ['accounts.view_accounttemplate']
+        }
+      },
+      {
+        path: 'create',
+        component: () => import('@/views/accounts/AccountTemplate/AccountTemplateCreateUpdate.vue'),
+        name: 'AccountTemplateCreate',
+        meta: {
+          title: i18n.t('CreateAccountTemplate'),
+          action: 'create'
+        },
         hidden: true
       },
       {
-        path: 'plan-execution/:id',
-        component: () => import('@/views/accounts/AccountBackupPlan/AccountBackupPlanDetail/AccountBackupPlanExecution/AccountBackupPlanExecutionDetail/index.vue'),
-        name: 'AccountBackupPlanExecutionDetail',
-        meta: { title: i18n.t('xpack.AccountBackupPlan.ExecutionDetail') },
+        path: ':id/update',
+        component: () => import('@/views/accounts/AccountTemplate/AccountTemplateCreateUpdate.vue'),
+        name: 'AccountTemplateUpdate',
+        meta: {
+          title: i18n.t('UpdateAccountTemplate'),
+          action: 'update'
+        },
         hidden: true
+      },
+      {
+        path: ':id',
+        component: () => import('@/views/accounts/AccountTemplate/AccountTemplateDetail/index.vue'),
+        name: 'AccountTemplateDetail',
+        meta: { title: i18n.t('AccountTemplate') },
+        hidden: true
+      }
+    ]
+  },
+  {
+    path: 'automations',
+    component: empty,
+    name: 'AccountAutomation',
+    meta: {
+      title: i18n.t('Automations'),
+      name: 'Automations',
+      icon: 'automation',
+      permissions: []
+    },
+    children: [
+      {
+        path: 'account-push',
+        name: 'AccountPush',
+        component: empty,
+        redirect: {
+          name: 'AccountPushList'
+        },
+        meta: {
+          app: 'accounts',
+          name: 'BaseAccountPushList',
+          resource: 'pushaccountautomation'
+        },
+        children: [
+          {
+            path: '',
+            component: () => import('@/views/accounts/AccountPush/index.vue'),
+            name: 'AccountPushList',
+            meta: {
+              title: i18n.t('AccountPushList'),
+              menuTitle: i18n.t('AccountPushList'),
+              permissions: ['accounts.view_pushaccountautomation']
+            }
+          },
+          {
+            path: 'create',
+            component: () => import('@/views/accounts/AccountPush/AccountPushCreateUpdate.vue'),
+            name: 'AccountPushCreate',
+            hidden: true,
+            meta: {
+              title: i18n.t('AccountPushCreate'),
+              // activeMenu: '/console/accounts/automations',
+              permissions: ['accounts.add_pushaccountautomation']
+            }
+          },
+          {
+            path: ':id/update',
+            component: () => import('@/views/accounts/AccountPush/AccountPushCreateUpdate.vue'),
+            name: 'AccountPushUpdate',
+            hidden: true,
+            meta: {
+              title: i18n.t('AccountPushUpdate'),
+              // activeMenu: '/console/accounts/automations',
+              permissions: ['accounts.change_pushaccountautomation']
+            }
+          },
+          {
+            path: ':id',
+            component: () => import('@/views/accounts/AccountPush/AccountPushDetail/index.vue'),
+            name: 'AccountPushDetail',
+            hidden: true,
+            meta: {
+              title: i18n.t('AccountPushList'),
+              // activeMenu: '/console/accounts/automations',
+              permissions: ['accounts.view_pushaccountautomation']
+            }
+          },
+          {
+            path: 'executions',
+            component: () => import('@/views/accounts/AccountPush/AccountPushExecutionList.vue'),
+            name: 'AccountPushExecutionList',
+            hidden: true,
+            meta: {
+              title: i18n.t('ExecutionList'),
+              // activeMenu: '/console/accounts/automations',
+              permissions: ['accounts.view_pushaccountexecution']
+            }
+          },
+          {
+            path: 'executions/:id',
+            component: () => import('@/views/accounts/AccountPush/AccountPushExecutionDetail/index.vue'),
+            name: 'AccountPushExecutionDetail',
+            hidden: true,
+            meta: {
+              title: i18n.t('ExecutionDetail'),
+              // activeMenu: '/console/accounts/automations',
+              permissions: ['accounts.view_pushaccountexecution']
+            }
+          }
+        ]
+      },
+      {
+        path: 'account-change-secret',
+        name: 'AccountChangeSecret',
+        component: empty,
+        redirect: {
+          name: 'AccountChangeSecretList'
+        },
+        meta: {
+          title: i18n.t('BaseAccountChangeSecret'),
+          app: 'accounts',
+          licenseRequired: true
+        },
+        children: [
+          {
+            path: '',
+            component: () => import('@/views/accounts/AccountChangeSecret/index.vue'),
+            name: 'AccountChangeSecretList',
+            meta: {
+              menuTitle: i18n.t('ChangeCredentials'),
+              title: i18n.t('AccountChangeSecret'),
+              permissions: ['accounts.view_changesecretautomation']
+            }
+          },
+          {
+            path: 'create',
+            component: () => import('@/views/accounts/AccountChangeSecret/AccountChangeSecretCreateUpdate.vue'),
+            name: 'AccountChangeSecretCreate',
+            hidden: true,
+            meta: {
+              title: i18n.t('AssetChangeSecretCreate'),
+              permissions: ['accounts.add_changesecretautomation']
+            }
+          },
+          {
+            path: ':id/update',
+            component: () => import('@/views/accounts/AccountChangeSecret/AccountChangeSecretCreateUpdate.vue'),
+            name: 'AccountChangeSecretUpdate',
+            hidden: true,
+            meta: {
+              title: i18n.t('AssetChangeSecretUpdate'),
+              permissions: ['accounts.change_changesecretautomation']
+            }
+          },
+          {
+            path: ':id',
+            component: () => import('@/views/accounts/AccountChangeSecret/AccountChangeSecretDetail/index.vue'),
+            name: 'AccountChangeSecretDetail',
+            hidden: true,
+            meta: {
+              title: i18n.t('AccountChangeSecret'),
+              permissions: ['accounts.view_changesecretautomation']
+            }
+          },
+          {
+            path: 'executions',
+            component: () => import('@/views/accounts/AccountChangeSecret/AccountChangeSecretDetail/AccountChangeSecretExecution/AccountChangeSecretExecutionList.vue'),
+            name: 'AccountChangeSecretExecutionList',
+            hidden: true,
+            meta: {
+              title: i18n.t('ExecutionList'),
+              permissions: ['accounts.view_changesecretexecution']
+            }
+          },
+          {
+            path: 'executions/:id',
+            component: () => import('@/views/accounts/AccountChangeSecret/AccountChangeSecretDetail/AccountChangeSecretExecution/AccountChangeSecretExecutionDetail/index.vue'),
+            name: 'AccountChangeSecretExecutionDetail',
+            hidden: true,
+            meta: {
+              title: i18n.t('ExecutionDetail'),
+              permissions: ['accounts.view_changesecretexecution']
+            }
+          }
+        ]
+      },
+      {
+        path: 'account-gather',
+        component: empty,
+        redirect: {
+          name: 'AccountGatherList'
+        },
+        name: 'AccountGather',
+        meta: {
+          title: i18n.t('AccountGatherList'),
+          app: 'accounts',
+          // activeMenu: '/console/accounts/automations',
+          licenseRequired: true
+        },
+        children: [
+          {
+            path: '',
+            component: () => import('@/views/accounts/AccountGather/index.vue'),
+            name: 'AccountGatherList',
+            meta: {
+              menuTitle: i18n.t('GatherAccounts'),
+              title: i18n.t('AccountGatherTaskList'),
+              // activeMenu: '/console/accounts/automations',
+              permissions: ['accounts.view_gatheredaccount']
+            }
+          },
+          {
+            path: 'create',
+            component: () => import('@/views/accounts/AccountGather/TaskCreateUpdate'),
+            name: 'AccountGatherTaskCreate',
+            hidden: true,
+            meta: {
+              title: i18n.t('AccountGatherTaskCreate'),
+              // activeMenu: '/console/accounts/automations',
+              permissions: ['accounts.add_gatheraccountsautomation']
+            }
+          },
+          {
+            path: ':id',
+            component: () => import('@/views/accounts/AccountGather/TaskDetail/index'),
+            name: 'AccountGatherTaskDetail',
+            hidden: true,
+            meta: {
+              title: i18n.t('AccountGatherTaskDetail'),
+              // activeMenu: '/console/accounts/automations',
+              permissions: ['accounts.view_gatheraccountsautomation']
+            }
+          },
+          {
+            path: ':id/update',
+            component: () => import('@/views/accounts/AccountGather/TaskCreateUpdate'),
+            name: 'AccountGatherTaskUpdate',
+            hidden: true,
+            meta: {
+              title: i18n.t('AccountGatherTaskUpdate'),
+              action: 'update',
+              permissions: ['accounts.change_gatheraccountsautomation'],
+              activeMenu: '/accounts/account-gather'
+            }
+          },
+          {
+            path: 'executions',
+            component: () => import('@/views/accounts/AccountGather/TaskDetail/TaskExecutionList.vue'),
+            name: 'AccountGatherTaskExecutionList',
+            hidden: true,
+            meta: {
+              title: i18n.t('ExecutionList'),
+              // activeMenu: '/console/accounts/automations',
+              permissions: ['accounts.view_gatheraccountsexecution']
+            }
+          },
+          {
+            path: 'executions/:id',
+            component: () => import('@/views/accounts/AccountGather/TaskDetail/AccountGatherExecutionDetail/index.vue'),
+            name: 'AccountGatherExecutionDetail',
+            hidden: true,
+            meta: {
+              title: i18n.t('ExecutionDetail'),
+              // activeMenu: '/console/accounts/automations',
+              permissions: ['accounts.view_gatheraccountsexecution']
+            }
+          }
+        ]
+      },
+      {
+        path: 'account-backup',
+        component: empty,
+        name: 'AccountBackup',
+        redirect: {
+          name: 'AccountBackupList'
+        },
+        meta: {
+          title: i18n.t('AccountBackup'),
+          app: 'accounts',
+          resource: 'accountbackupautomation',
+          licenseRequired: true
+        },
+        children: [
+          {
+            path: '',
+            component: () => import('@/views/accounts/AccountBackup/index.vue'),
+            name: 'AccountBackupList',
+            meta: {
+              menuTitle: i18n.t('AccountBackup'),
+              title: i18n.t('AccountBackupList'),
+              // activeMenu: '/console/accounts/automations',
+              permissions: ['accounts.view_accountbackupautomation']
+            }
+          },
+          {
+            path: 'create',
+            component: () => import('@/views/accounts/AccountBackup/AccountBackupCreateUpdate.vue'),
+            name: 'AccountBackupCreate',
+            meta: {
+              title: i18n.t('AccountBackupCreate'),
+              // activeMenu: '/console/accounts/automations',
+              action: 'create'
+            },
+            hidden: true
+          },
+          {
+            path: ':id/update',
+            component: () => import('@/views/accounts/AccountBackup/AccountBackupCreateUpdate.vue'),
+            name: 'AccountBackupUpdate',
+            meta: {
+              title: i18n.t('AccountBackupUpdate'),
+              // activeMenu: '/console/accounts/automations',
+              action: 'update'
+            },
+            hidden: true
+          },
+          {
+            path: ':id',
+            component: () => import('@/views/accounts/AccountBackup/AccountBackupDetail/index.vue'),
+            name: 'AccountBackupDetail',
+            // activeMenu: '/console/accounts/automations',
+            meta: {
+              title: i18n.t('AccountBackupDetail'),
+              activeMenu: '/console/accounts/automations'
+            },
+            hidden: true
+          },
+          {
+            path: 'executions',
+            component: () => import('@/views/accounts/AccountBackup/AccountBackupDetail/AccountBackupExecution/AccountBackupExecutionList.vue'),
+            name: 'AccountBackupExecutionList',
+            meta: { title: i18n.t('ExecutionDetail') },
+            hidden: true
+          },
+          {
+            path: 'executions/:id',
+            component: () => import('@/views/accounts/AccountBackup/AccountBackupDetail/AccountBackupExecution/AccountBackupExecutionDetail/index.vue'),
+            name: 'AccountBackupExecutionDetail',
+            meta: { title: i18n.t('ExecutionDetail') },
+            hidden: true
+          }
+        ]
       }
     ]
   }

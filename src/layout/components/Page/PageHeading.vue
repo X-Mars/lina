@@ -1,61 +1,79 @@
 <template>
   <div>
     <slot name="globalNotification">
-      <LicenseRelatedTip />
+      <SqlQueryTip v-if="debug" />
+      <LicenseRelatedTip v-else />
       <PasswordExpireTip />
     </slot>
     <div class="page-heading">
-      <el-row :gutter="0">
+      <el-row :gutter="0" type="flex">
         <el-col :span="16" class="page-heading-left">
           <slot><h2>{{ title }}</h2></slot>
         </el-col>
-        <el-col :span="8">
-          <div class="page-heading-right">
-            <slot name="rightSide" />
-          </div>
+        <el-col :span="8" class="page-heading-right">
+          <slot name="rightSide" />
         </el-col>
       </el-row>
     </div>
   </div>
-<!--    <Breadcrumb />-->
 </template>
 
 <script>
-import LicenseRelatedTip from '@/layout/components/Page/LicenseRelatedTip'
-import PasswordExpireTip from '@/layout/components/Page/PasswordExpireTip'
+import LicenseRelatedTip from './LicenseRelatedTip'
+import PasswordExpireTip from './PasswordExpireTip'
+import SqlQueryTip from './SqlQueryTip'
+
 export default {
   name: 'PageHeading',
   components: {
     LicenseRelatedTip,
-    PasswordExpireTip
+    PasswordExpireTip,
+    SqlQueryTip
   },
   props: {
     title: {
       type: String,
       default: ''
     }
+  },
+  data() {
+    return {
+      debug: process.env.NODE_ENV === 'development'
+    }
   }
 }
 </script>
 
-<style scoped>
-  .page-heading {
-    border-top: 0;
-    padding: 12px 30px 13px 25px;
-    background-color: #ffffff;
-    min-height: 1px;
-  }
+<style lang="scss" scoped>
+$origin-color: #ffffff;
 
-  .page-heading-left, h2 {
-    font-size: 18px;
-    font-weight: 300;
-    line-height: 1.5;
-    /*margin-bottom: 12px;*/
-    height: 30px;
-    max-height: 32px;
-  }
+.page-heading {
+  display: flex;
+  align-items: center;
+  height: 50px;
+  background-color: $origin-color;
+  border-bottom: 1px solid rgba(31, 35, 41, .15);
 
-  .page-heading-right {
-    float: right;
+  .el-row {
+    width: 100%;
+    padding: 0 24px;
+
+    .page-heading-left,
+    h2 {
+      display: flex;
+      align-items: center;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .page-heading-right {
+      display: flex;
+      justify-content: flex-end;
+    }
   }
+}
 </style>
