@@ -1,8 +1,28 @@
-import store from '@/store'
 import { constantRoutes } from '@/router'
+import store from '@/store'
 
-export function openTaskPage(taskId) {
-  window.open(`/#/ops/celery/task/${taskId}/log/`, '', 'width=900,height=600')
+let openedTaskWindow = null // 保存已打开的窗口对象
+
+function openOrReuseWindow(url, windowName = 'task', windowFeatures = '', iWidth = 900, iHeight = 600) {
+  const iTop = (window.screen.height - 30 - iHeight) / 2
+  const iLeft = (window.screen.width - 10 - iWidth) / 2
+
+  // 检查窗口是否已经打开
+  if (openedTaskWindow && !openedTaskWindow.closed) {
+    openedTaskWindow.location.href = url // 如果窗口未关闭，更新其地址
+    openedTaskWindow.focus() // 将窗口置于前台
+  } else {
+    // 如果窗口未打开或已关闭，创建新窗口
+    openedTaskWindow = window.open(url, windowName, 'height=' + iHeight + ',width=' + iWidth + ',top=' + iTop + ',left=' + iLeft)
+  }
+}
+
+export function openTaskPage(taskId, taskType, taskUrl) {
+  taskType = taskType || 'celery'
+  if (!taskUrl) {
+    taskUrl = `/core/ops/${taskType}/task/${taskId}/log/?type=${taskType}`
+  }
+  openOrReuseWindow(taskUrl)
 }
 
 export function checkPermission(permsRequired, permsAll) {
@@ -91,7 +111,8 @@ export function getPermedViews() {
     ['audit', store.getters.auditOrgs.length > 0],
     ['workbench', true],
     ['tickets', hasPermission('tickets.view_ticket')],
-    ['settings', hasPermission('settings.view_setting')]
+    ['settings', hasPermission('settings.view_setting')],
+    ['pam', store.getters.consoleOrgs.length > 0]
   ]
   return viewShowMapper.filter(i => i[1]).map(i => i[0])
 }
@@ -104,7 +125,7 @@ export function isSameView(to, from) {
 
 export function getPropView() {
   const hasPermedViews = getPermedViews()
-  const preView = localStorage.getItem('PreView')
+  const preView = localStorage.getItem('preView')
   const hasPerm = hasPermedViews.indexOf(preView) > -1
   if (hasPerm) {
     return preView
@@ -138,4 +159,34 @@ export function getConstRouteName() {
   }
   addRoutes(names, constRoutes)
   return names
+}
+
+export function toM2MJsonParams(attrFilter) {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(JSON.stringify(attrFilter))
+  return ['attr_rules', encodeURIComponent(btoa(String.fromCharCode(...data)))]
+}
+
+export function IsSupportPauseSessionType(terminalType) {
+  const supportedType = ['koko', 'lion', 'chen', 'kael']
+  return supportedType.includes(terminalType)
+}
+
+export function loadPlatformIcon(name, type) {
+  const platformMap = {
+    'Huawei': 'huawei',
+    'Cisco': 'cisco',
+    'Gateway': 'gateway',
+    'macOS': 'macos',
+    'BSD': 'bsd',
+    'Vmware-vSphere': 'vmware'
+  }
+
+  const value = platformMap[name] || type
+
+  try {
+    return require(`@/assets/img/icons/${value}.png`)
+  } catch (error) {
+    return require(`@/assets/img/icons/other.png`)
+  }
 }

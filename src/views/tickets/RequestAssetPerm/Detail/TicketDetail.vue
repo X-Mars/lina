@@ -1,42 +1,52 @@
 <template>
   <GenericTicketDetail
-    :object="object"
-    :detail-card-items="detailCardItems"
-    :special-card-items="specialCardItems"
-    :assigned-card-items="assignedCardItems"
     :approve="handleApprove"
+    :assigned-card-items="assignedCardItems"
     :close="handleClose"
+    :object="object"
     :reject="handleReject"
+    :special-card-items="specialCardItems"
   >
-    <IBox v-if="hasActionPerm&&object.status !== 'closed'" class="box">
+    <IBox v-if="hasActionPerm && object.status.value !== 'closed'" class="box">
       <div slot="header" class="clearfix ibox-title">
-        <i class="fa fa-edit" /> {{ $t('common.Actions') }}
+        <i class="fa fa-edit" /> {{ $tc('Actions') }}
       </div>
       <template>
-        <el-form ref="requestForm" :model="requestForm" label-width="140px" label-position="left" class="assets">
-          <el-form-item :label="$t('assets.Node')">
-            <Select2 v-model="requestForm.nodes" v-bind="nodeSelect2" style="width: 50% !important" />
+        <el-form ref="requestForm" :model="requestForm" class="assets" label-position="left" label-width="140px">
+          <el-form-item :label="$tc('Node')">
+            <Select2 v-model="requestForm.nodes" style="width: 50% !important" v-bind="nodeSelect2" />
           </el-form-item>
-          <el-form-item :label="$t('tickets.Asset')">
-            <Select2 v-model="requestForm.assets" v-bind="assetSelect2" style="width: 50% !important" />
+          <el-form-item :label="$tc('Asset')">
+            <Select2 v-model="requestForm.assets" style="width: 50% !important" v-bind="assetSelect2" />
           </el-form-item>
-          <el-form-item :label="$t('tickets.SystemUser')" :rules="isRequired">
-            <Select2 v-model="requestForm.systemusers" v-bind="systemuserSelect2" style="width: 50% !important" />
+          <el-form-item :label="$tc('Account')" :rules="isRequired">
+            <AccountFormatter
+              v-model="requestForm.accounts"
+              :assets="requestForm.assets"
+              :nodes="requestForm.nodes"
+              :oid="requestForm.oid"
+              :show-add-template="false"
+              style="width: 50% !important"
+            />
           </el-form-item>
-          <el-form-item :label="$t('common.dateStart')" required>
+          <el-form-item :label="$tc('DateStart')" required>
             <el-date-picker
               v-model="requestForm.apply_date_start"
               type="datetime"
             />
           </el-form-item>
-          <el-form-item :label="$t('common.dateExpired')" required>
+          <el-form-item :label="$tc('DateExpired')" required>
             <el-date-picker
               v-model="requestForm.apply_date_expired"
               type="datetime"
             />
           </el-form-item>
-          <el-form-item :label="$t('assets.Action')" required>
-            <PermissionFormActionField v-model="requestForm.actions" :value="requestForm.actions" style="width: 30% !important" />
+          <el-form-item :label="$tc('Action')">
+            <BasicTree
+              v-model="requestForm.actions"
+              :tree="treeNodes"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-form>
       </template>
@@ -45,16 +55,19 @@
 </template>
 
 <script>
-import { formatTime, getDateTimeStamp } from '@/utils/index'
-import { toSafeLocalDateStr, forMatAction } from '@/utils/common'
-import IBox from '@/components/IBox'
-import Select2 from '@/components/FormFields/Select2'
+import { formatTime, getDateTimeStamp } from '@/utils'
+import { toSafeLocalDateStr } from '@/utils/time'
+import { STATUS_MAP, treeNodes } from '../../const'
 import GenericTicketDetail from '@/views/tickets/components/GenericTicketDetail'
-import PermissionFormActionField from '@/views/perms/components/PermissionFormActionField'
-import { STATUS_MAP } from '../../const'
+import AccountFormatter from '@/views/perms/AssetPermission/components/AccountFormatter'
+import Select2 from '@/components/Form/FormFields/Select2'
+import BasicTree from '@/components/Form/FormFields/BasicTree'
+import IBox from '@/components/IBox'
+import { AccountLabelMapper } from '@/views/perms/const'
+
 export default {
   name: '',
-  components: { GenericTicketDetail, IBox, Select2, PermissionFormActionField },
+  components: { GenericTicketDetail, IBox, Select2, AccountFormatter, BasicTree },
   props: {
     object: {
       type: Object,
@@ -63,12 +76,14 @@ export default {
   },
   data() {
     return {
-      statusMap: this.object.status === 'open' ? STATUS_MAP['pending'] : STATUS_MAP[this.object.state],
+      treeNodes,
+      statusMap: this.object.status.value === 'open' ? STATUS_MAP['pending'] : STATUS_MAP[this.object.state.value],
       requestForm: {
-        nodes: this.object.apply_nodes,
-        assets: this.object.apply_assets,
-        systemusers: this.object.apply_system_users,
+        nodes: this.object.apply_nodes?.map(i => i.id),
+        assets: this.object.apply_assets?.map(i => i.id),
+        accounts: this.object.apply_accounts,
         actions: this.object.apply_actions,
+        oid: this.object.org_id,
         apply_date_expired: this.object.apply_date_expired,
         apply_date_start: this.object.apply_date_start
       },
@@ -94,21 +109,7 @@ export default {
             return `/api/v1/assets/assets/?oid=${oid}&protocol__in=rdp,vnc,ssh,telnet`
           }(this.object)),
           transformOption: (item) => {
-            return { label: item.hostname, value: item.id }
-          }
-        }
-      },
-      systemuserSelect2: {
-        multiple: true,
-        value: this.object.apply_system_users,
-        ajax: {
-          url: (function(object) {
-            const oid = object.org_id
-            return `/api/v1/assets/system-users/?oid=${oid}&protocol__in=rdp,vnc,ssh,telnet`
-          }(this.object)),
-          transformOption: (item) => {
-            const username = item.username || '*'
-            return { label: item.name + '(' + username + ')', value: item.id }
+            return { label: `${item.name}(${item.address})`, value: item.id }
           }
         }
       }
@@ -116,124 +117,88 @@ export default {
   },
   computed: {
     isRequired() {
-      if (this.object.approval_step === this.object.process_map.length) {
+      if (this.object.approval_step.value === this.object.process_map.length) {
         return [{ required: true }]
       }
       return [{ required: false }]
     },
-    detailCardItems() {
-      const { object } = this
-      return [
-        {
-          key: this.$t('common.Number'),
-          value: object.serial_num
-        },
-        {
-          key: this.$t('tickets.status'),
-          value: object.state,
-          formatter: (item, val) => {
-            return <el-tag type={this.statusMap.type} size='mini'> { this.statusMap.title }</el-tag>
-          }
-        },
-        {
-          key: this.$t('tickets.type'),
-          value: object.type_display
-        },
-        {
-          key: this.$t('tickets.user'),
-          value: object.rel_snapshot.applicant
-        },
-        {
-          key: this.$t('tickets.OrgName'),
-          value: object.org_name
-        },
-        {
-          key: this.$t('common.dateCreated'),
-          value: toSafeLocalDateStr(object.date_created)
-        },
-        {
-          key: this.$t('common.Comment'),
-          value: object.comment
-        }
-      ]
-    },
     specialCardItems() {
       const { object } = this
-      const rel_snapshot = object.rel_snapshot
       return [
         {
-          key: this.$t('perms.Node'),
-          value: rel_snapshot.apply_nodes.join(', ')
+          key: this.$tc('Node'),
+          value: object.apply_nodes.map(item => item.name).join(', ')
         },
         {
-          key: this.$t('tickets.Asset'),
-          value: rel_snapshot.apply_assets.join(', ')
+          key: this.$tc('Asset'),
+          value: object.apply_assets.map(item => item.name).join(', ')
         },
         {
-          key: this.$t('tickets.SystemUser'),
-          value: rel_snapshot.apply_system_users.join(', ')
+          key: this.$tc('Account'),
+          value: object.apply_accounts.map(item => AccountLabelMapper[item] || item).join(', ')
         },
         {
-          key: this.$t('assets.Action'),
-          value: forMatAction(this, object.apply_actions_display)
+          key: this.$tc('Action'),
+          value: object.apply_actions.map(item => item.label).join(', ')
         },
         {
-          key: this.$t('common.dateStart'),
-          value: toSafeLocalDateStr(object.apply_date_start)
+          key: this.$tc('DateStart'),
+          value: object.apply_date_start
         },
         {
-          key: this.$t('common.dateExpired'),
-          value: toSafeLocalDateStr(object.apply_date_expired)
+          key: this.$tc('DateExpired'),
+          value: object.apply_date_expired
         }
       ]
     },
     assignedCardItems() {
       const vm = this
       const { object } = this
-      const rel_snapshot = object.rel_snapshot
       return [
         {
-          key: this.$t('tickets.PermissionName'),
+          key: this.$tc('PermissionName'),
           value: object.apply_permission_name,
           formatter: function(item, value) {
             const to = { name: 'AssetPermissionDetail', params: { id: object.id }, query: { oid: object.org_id }}
-            if (vm.$hasPerm('perms.view_assetpermission') && object.status === 'closed' && object.state === 'approved') {
-              return <router-link to={to}>{ value }</router-link>
+            if (vm.$hasPerm('perms.view_assetpermission') && object.status.value === 'closed' && object.state.value === 'approved') {
+              return <router-link to={to}>{value}</router-link>
             } else {
-              return <span>{ value }</span>
+              return <span>{value}</span>
             }
           }
         },
         {
-          key: this.$t('perms.Node'),
-          value: rel_snapshot.apply_nodes.join(', ')
+          key: this.$tc('Node'),
+          value: object.apply_nodes.map(item => item.name).join(', ')
         },
         {
-          key: this.$t('assets.Asset'),
-          value: rel_snapshot.apply_assets.join(', ')
+          key: this.$tc('Asset'),
+          value: object.apply_assets.map(item => item.name).join(', ')
         },
         {
-          key: this.$t('tickets.SystemUser'),
-          value: rel_snapshot.apply_system_users.join(', ')
+          key: this.$tc('Account'),
+          value: object.apply_accounts.map(item => AccountLabelMapper[item] || item).join(', ')
         },
         {
-          key: this.$t('assets.Action'),
-          value: forMatAction(this, object.apply_actions_display)
+          key: this.$tc('Action'),
+          value: object.apply_actions.map(item => item.label).join(', ')
         },
         {
-          key: this.$t('common.dateStart'),
-          value: toSafeLocalDateStr(object.apply_date_start)
+          key: this.$tc('DateStart'),
+          value: object.apply_date_start
         },
         {
-          key: this.$t('common.dateExpired'),
-          value: toSafeLocalDateStr(object.apply_date_expired)
+          key: this.$tc('DateExpired'),
+          value: object.apply_date_expired
         }
       ]
     },
     hasActionPerm() {
-      const approval_step = this.object.approval_step
+      const approval_step = this.object.approval_step.value
       const current_user_id = this.$store.state.users.profile.id
-      return this.object.process_map[approval_step - 1].assignees.indexOf(current_user_id) !== -1
+      return this.object.process_map.filter(
+        item => item.approval_level === approval_step
+      )[0].assignees.indexOf(current_user_id) !== -1
     }
   },
   methods: {
@@ -247,28 +212,29 @@ export default {
       window.location.reload()
     },
     handleApprove() {
-      if (this.object.approval_step === this.object.process_map.length) {
-        const assetLength = this.requestForm.assets.length
-        const nodeLength = this.requestForm.nodes.length
-        if (assetLength === 0 && nodeLength === 0) {
-          return this.$message.error(this.$tc('common.SelectAtLeastOneAssetOrNodeErrMsg'))
-        } else if (this.requestForm.systemusers.length === 0) {
-          return this.$message.error(this.$tc('common.RequiredSystemUserErrMsg'))
+      const nodes = this.requestForm.nodes
+      const assets = this.requestForm.assets
+      const accounts = this.requestForm.accounts
+      if (this.object.approval_step.value === this.object.process_map.length) {
+        if (assets.length === 0 && nodes.length === 0) {
+          return this.$message.error(this.$tc('SelectAtLeastOneAssetOrNodeErrMsg'))
+        } else if (accounts.length === 0) {
+          return this.$message.error(this.$tc('RequiredSystemUserErrMsg'))
         }
       }
       this.$axios.patch(`/api/v1/tickets/apply-asset-tickets/${this.object.id}/approve/`, {
-        apply_system_users: this.requestForm.systemusers ? this.requestForm.systemusers : [],
-        apply_nodes: this.requestForm.nodes ? this.requestForm.nodes : [],
-        apply_assets: this.requestForm.assets ? this.requestForm.assets : [],
+        apply_nodes: nodes || [],
+        apply_assets: assets || [],
+        apply_accounts: accounts || [],
+        org_id: this.object.org_id,
         apply_actions: this.requestForm.actions,
         apply_date_start: this.requestForm.apply_date_start,
-        apply_date_expired: this.requestForm.apply_date_expired,
-        org_id: this.object.org_id
+        apply_date_expired: this.requestForm.apply_date_expired
       }).then(() => {
-        this.$message.success(this.$tc('common.updateSuccessMsg'))
+        this.$message.success(this.$tc('UpdateSuccessMsg'))
         this.reloadPage()
       }).catch(() => {
-        this.$message.success(this.$tc('common.updateErrorMsg'))
+        this.$message.success(this.$tc('UpdateErrorMsg'))
       })
     },
     handleClose() {
@@ -284,19 +250,23 @@ export default {
 </script>
 
 <style scoped>
-  .assets{
+  .assets {
     margin-top: 14px;
   }
+
   .feed-activity-list .feed-element {
     border-bottom: 1px solid #e7eaec;
   }
+
   .feed-element > .pull-left {
     margin-right: 10px;
   }
+
   .feed-element .header-avatar {
     width: 38px;
     height: 38px;
   }
+
   .box {
     margin-bottom: 15px;
   }

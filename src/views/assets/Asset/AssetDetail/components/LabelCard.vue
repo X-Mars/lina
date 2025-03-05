@@ -1,14 +1,24 @@
 <template>
-  <IBox fa="fa-info-circle" :title="title" v-bind="$attrs">
+  <IBox :title="title" fa="fa-info-circle" v-bind="$attrs">
     <div class="quick-actions">
-      <p v-if="iLabels.length === 0">{{ $t('common.Nothing') }}</p>
-      <el-tag v-for="i in iLabels" :key="i.name + i.value" type="info">{{ i.name }}:{{ i.value }}</el-tag>
+      <p v-if="labels.length === 0">{{ $t('Nothing') }}</p>
+      <template v-else>
+        <el-tag
+          v-for="i in labels"
+          :key="i.name + i.value"
+          class="tag"
+          type="info"
+        >
+          {{ i.name }}:{{ i.value }}
+        </el-tag>
+      </template>
     </div>
   </IBox>
 </template>
 
 <script>
 import IBox from '@/components/IBox'
+
 export default {
   name: '',
   components: {
@@ -18,7 +28,7 @@ export default {
     title: {
       type: String,
       default() {
-        return this.$t('assets.Label')
+        return this.$t('Tags')
       }
     },
     labels: {
@@ -29,22 +39,14 @@ export default {
     }
   },
   data() {
-    return {
-      iLabels: []
-    }
-  },
-  mounted() {
-    this.$axios.get(`/api/v1/assets/labels/`).then(res => {
-      for (const i in res) {
-        if (this.labels.indexOf(res[i].id) > -1) {
-          this.iLabels.push(res[i])
-        }
-      }
-    })
+    return {}
   }
 }
 </script>
 
-<style lang='less' scoped>
-
+<style lang='scss' scoped>
+.tag {
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
 </style>

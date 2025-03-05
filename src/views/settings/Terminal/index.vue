@@ -1,5 +1,5 @@
 <template>
-  <TabPage :submenu="submenu" :active-menu.sync="activeMenu">
+  <TabPage :active-menu.sync="activeMenu" :submenu="submenu">
     <keep-alive>
       <component :is="activeMenu" />
     </keep-alive>
@@ -9,12 +9,11 @@
 <script>
 import TabPage from '@/layout/components/TabPage'
 import Basic from './Base'
-import TerminalList from './TerminalList'
-import ReplayStorage from './Storage/ReplayStorage'
-import CommandStorage from './Storage/CommandStorage'
+import TerminalList from './Component/TerminalList'
 import Monitor from './Monitor'
 import EndpointList from './Endpoint/EndpointList'
 import EndpointRuleList from './EndpointRule/EndpointRuleList'
+import ComponentLog from '@/views/settings/Terminal/ComponentLog/ComponentLog.vue'
 
 export default {
   components: {
@@ -22,10 +21,9 @@ export default {
     Basic,
     Monitor,
     TerminalList,
-    ReplayStorage,
-    CommandStorage,
     EndpointList,
-    EndpointRuleList
+    EndpointRuleList,
+    ComponentLog
   },
   data() {
     return {
@@ -33,43 +31,40 @@ export default {
       activeMenu: 'Basic',
       submenu: [
         {
-          title: this.$t('setting.Basic'),
+          title: this.$t('Basic'),
           name: 'Basic'
         },
         {
-          title: this.$t('route.Terminal'),
+          title: this.$t('Components'),
           name: 'TerminalList',
           hidden: () => !this.$hasPerm('terminal.view_terminal')
         },
         {
-          title: this.$t('sessions.replayStorage'),
-          name: 'ReplayStorage',
-          hidden: () => !this.$hasPerm('terminal.view_replaystorage')
-        },
-        {
-          title: this.$t('sessions.commandStorage'),
-          name: 'CommandStorage',
-          hidden: () => !this.$hasPerm('terminal.view_commandstorage')
-        },
-        {
-          title: this.$t('xpack.ComponentMonitor'),
+          title: this.$t('ComponentMonitor'),
           name: 'Monitor',
           hidden: () => {
             return !(this.$hasPerm('terminal.view_status') && this.$store.getters.hasValidLicense)
           }
         },
         {
-          title: this.$t('xpack.Endpoint'),
+          title: this.$t('Endpoints'),
           name: 'EndpointList',
           hidden: () => {
             return !this.$hasPerm('terminal.view_endpoint')
           }
         },
         {
-          title: this.$t('xpack.EndpointRule'),
+          title: this.$t('EndpointRules'),
           name: 'EndpointRuleList',
           hidden: () => {
             return !this.$hasPerm('terminal.view_endpointrule')
+          }
+        },
+        {
+          title: this.$t('Log'),
+          name: 'ComponentLog',
+          hidden: () => {
+            return !this.$store.getters.publicSettings['LOKI_LOG_ENABLED']
           }
         }
       ]
@@ -79,6 +74,12 @@ export default {
     componentData() {
       return {}
     }
+  },
+  beforeRouteUpdate(to, from, next) {
+    if (to.name === from.name && to.path === from.path && to.query?.tab) {
+      this.$store.commit('common/reload')
+    }
+    next()
   }
 }
 </script>

@@ -2,53 +2,66 @@
   <IBox v-if="session.id" v-loading="loading" class="box">
     <div slot="header" class="clearfix ibox-title">
       <i class="fa fa-rocket" />
-      {{ $t('sessions.session') }}
+      {{ $t('Session') }}
     </div>
     <div class="content">
       <el-row class="item">
         <el-col>
-          <span class="item-label">{{ $t('sessions.SessionID') }}：</span>
+          <span class="item-label">{{ $t('SessionID') }}：</span>
           <span class="item-value">{{ session.id }}</span>
         </el-col>
         <el-col>
-          <span class="item-label">{{ $t('sessions.TargetResources') }}：</span>
+          <span class="item-label">{{ $t('TargetResources') }}：</span>
           <span class="item-value">{{ session.asset }}</span>
         </el-col>
         <el-col>
-          <span class="item-label">{{ $t('tickets.SystemUser') }}：</span>
-          <span class="item-value">{{ session.system_user }}</span>
+          <span class="item-label">{{ $t('Account') }}：</span>
+          <span class="item-value">{{ session.account }}</span>
         </el-col>
         <el-col>
-          <span class="item-label">{{ $t('sessions.UseProtocol') }}：</span>
+          <span class="item-label">{{ $t('UseProtocol') }}：</span>
           <span class="item-value">{{ session.protocol }}</span>
         </el-col>
         <el-col>
-          <span class="item-label">{{ $t('sessions.remoteAddr') }}：</span>
+          <span class="item-label">{{ $t('RemoteAddr') }}：</span>
           <span class="item-value">{{ session.remote_addr }}</span>
         </el-col>
         <el-col>
-          <span class="item-label">{{ $t('sessions.SessionState') }}：</span>
-          <span class="item-value cur-color" :style="{ 'background': session.is_finished ? '#ed5565' : '#1ab394' }" />
+          <span class="item-label">{{ $t('SessionState') }}：</span>
+          <span :style="{ 'background': session.is_finished ? '#ed5565' : '#1ab394' }" class="item-value cur-color" />
         </el-col>
       </el-row>
     </div>
     <el-divider />
     <div class="bottom-btn">
       <el-button
-        type="danger"
-        size="small"
         :disabled="!session.can_terminate"
+        size="small"
+        type="danger"
         @click="onConnect"
       >
-        {{ $t('sessions.terminate') }}
+        {{ $t('Terminate') }}
       </el-button>
       <el-button
-        type="primary"
+        :disabled="!supportedLock"
         size="small"
+        type="warning"
+        @click="onToggleLock"
+      >
+        <template v-if="session.is_locked">
+          {{ $t('Resume') }}
+        </template>
+        <template v-else>
+          {{ $t('Pause') }}
+        </template>
+      </el-button>
+      <el-button
         :disabled="!session.can_join"
+        size="small"
+        type="primary"
         @click="onMonitor"
       >
-        {{ $t('sessions.Monitor') }}
+        {{ $t('Monitor') }}
       </el-button>
     </div>
   </IBox>
@@ -56,25 +69,28 @@
 
 <script>
 import IBox from '@/components/IBox'
+import { IsSupportPauseSessionType } from '@/utils/jms'
 
 export default {
   components: { IBox },
   props: {
     object: {
       type: Object,
-      default: () => {}
+      default: () => {
+      }
     }
   },
   data() {
     return {
       session: {},
       curTimer: null,
-      loading: false
+      loading: false,
+      supportedLock: false
     }
   },
 
   created() {
-    if (this.object.state === 'approved' && this.object.type === 'login_asset_confirm') {
+    if (this.object.state.value === 'approved' && this.object.type.value === 'login_asset_confirm') {
       this.init()
     }
   },
@@ -92,6 +108,9 @@ export default {
         disableFlashErrorMsg: true
       }).then(res => {
         this.session = res || {}
+        const terminalType = res['terminal']['type']
+        const isNormalSession = res['type']['value'] === 'normal'
+        this.supportedLock = IsSupportPauseSessionType(terminalType) && isNormalSession
       }).catch(err => {
         this.curTimer = setTimeout(() => {
           this.init()
@@ -105,7 +124,7 @@ export default {
       const url = '/api/v1/terminal/tasks/kill-session-for-ticket/'
       const data = [this.session.id] || []
       this.$axios.post(url, data).then(res => {
-        this.$message.success(this.$t('sessions.TerminateTaskSendSuccessMsg'))
+        this.$message.success(this.$tc('TerminateTaskSendSuccessMsg'))
         this.curTimer = setTimeout(() => {
           this.init()
         }, 50000)
@@ -114,8 +133,25 @@ export default {
       })
     },
     onMonitor() {
-      const joinUrl = `/luna/monitor/${this.session.id}`
-      window.open(joinUrl, 'height=600, width=800, top=400, left=400, toolbar=no, menubar=no, scrollbars=no, location=no, status=no')
+      const joinUrl = `/luna/monitor/${this.session.id}?ticket_id=${this.object.id}`
+      window.open(joinUrl, 'height=600, width=850, top=400, left=400, toolbar=no, menubar=no, scrollbars=no, location=no, status=no')
+    },
+    onToggleLock() {
+      const url = '/api/v1/terminal/tasks/toggle-lock-session-for-ticket/'
+      const task_name = this.session.is_locked ? 'unlock_session' : 'lock_session'
+      const data = {
+        'session_id': this.session.id,
+        'task_name': task_name
+      }
+      const resumeMsg = this.$tc('ResumeTaskSendSuccessMsg')
+      const pauseMsg = this.$tc('PauseTaskSendSuccessMsg')
+      const msg = this.session.is_locked ? resumeMsg : pauseMsg
+      this.$axios.post(url, data).then(res => {
+        this.$message.success(msg)
+        this.session.is_locked = !this.session.is_locked
+      }).catch(err => {
+        this.$message.error(err)
+      })
     }
   }
 
@@ -126,27 +162,34 @@ export default {
   .box {
     margin-top: 15px;
     margin-bottom: 15px;
-    &>>> .el-divider--horizontal {
+
+    & ::v-deep .el-divider--horizontal {
       margin: 10px 0;
     }
   }
+
   .content {
     line-height: 2.5;
     font-size: 13px;
     color: #676A6C;
+
     .item-label {
       font-weight: 700;
     }
+
     .item-value {
       color: #676A6C;
     }
-    &>>> .el-col {
+
+    & ::v-deep .el-col {
       line-height: 24px;
     }
   }
+
   .bottom-btn {
     text-align: right;
   }
+
   .cur-color {
     display: inline-block;
     width: 12px;

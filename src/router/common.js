@@ -7,21 +7,41 @@ import i18n from '@/i18n/i18n'
 export default [
   {
     path: '/ops/celery/task/:id/log/',
-    component: () => import('@/views/ops/CeleryTaskLog'),
+    component: () => import('@/views/settings/Task/CeleryTaskLog'),
     name: 'CeleryTaskLog',
     hidden: true,
     meta: {
-      title: i18n.t('route.CeleryTaskLog'),
+      title: i18n.t('CeleryTaskLog'),
+      permissions: []
+    }
+  },
+  {
+    path: '/ops/ansible/task/:id/log/',
+    component: () => import('@/views/settings/Task/CeleryTaskLog'),
+    name: 'AnsibleTaskLog',
+    hidden: true,
+    meta: {
+      title: i18n.t('CeleryTaskLog'),
       permissions: []
     }
   },
   {
     path: '/ops/task/task/:id/log/',
-    component: () => import('@/views/ops/CeleryTaskLog'),
+    component: () => import('@/views/settings/Task/CeleryTaskLog'),
     name: 'TaskLog',
     hidden: true,
     meta: {
-      title: i18n.t('route.CeleryTaskLog'),
+      title: i18n.t('CeleryTaskLog'),
+      permissions: []
+    }
+  },
+  {
+    path: '/chat/chat-ai/',
+    component: () => import('@/views/chat/ChatAi'),
+    name: 'ChatAi',
+    hidden: true,
+    meta: {
+      title: i18n.t('ChatAI'),
       permissions: []
     }
   },
@@ -35,5 +55,14 @@ export default [
     beforeEnter: (to, from, next) => {
       next({ name: 'SessionDetail', params: to.params, query: to.query })
     }
+  },
+  {
+    path: '/terminal/components/loki/tail/',
+    component: () => import('@/views/settings/Terminal/ComponentLogTail/ComponentLogTail.vue'),
+    name: 'ComponentLogTail',
+    meta: {
+      title: i18n.t('ComponentsLogTail')
+    },
+    hidden: true
   }
 ]

@@ -1,16 +1,18 @@
 <template>
   <GenericListPage
+    ref="ListPage"
     v-loading="loading"
+    :header-actions="iTicketAction"
     :table-config="ticketTableConfig"
-    :header-actions="ticketActions"
   />
 </template>
 
 <script type="text/jsx">
 import { GenericListPage } from '@/layout/components'
-import { DetailFormatter } from '@/components/TableFormatters'
-import { toSafeLocalDateStr } from '@/utils/common'
-import { APPROVE, REJECT } from './const'
+import { DetailFormatter, TagChoicesFormatter } from '@/components/Table/TableFormatters'
+import { toSafeLocalDateStr } from '@/utils/time'
+import { APPROVE, CLOSED, OPEN, REJECT } from './const'
+
 export default {
   name: 'TicketListTable',
   components: {
@@ -21,38 +23,46 @@ export default {
       type: String,
       default: '/api/v1/tickets/tickets/'
     },
-    hasMoreActions: {
-      type: Boolean,
-      default: false
+    extraTicketAction: {
+      type: Object,
+      default: () => ({})
+    },
+    extraQuery: {
+      type: Object,
+      default: () => ({})
     }
   },
   data() {
+    const vm = this
     return {
       loading: true,
       ticketTableConfig: {
         url: this.url,
-        columns: [
-          {
-            prop: 'serial_num',
-            label: this.$t('common.Number'),
+        extraQuery: this.extraQuery,
+        columnsExclude: ['process_map', 'rel_snapshot'],
+        columnsShow: {
+          min: ['title', 'serial_num', 'type', 'state', 'date_created'],
+          default: ['title', 'serial_num', 'type', 'state', 'date_created']
+        },
+        columnsMeta: {
+          serial_num: {
+            label: this.$t('Number'),
             sortable: 'custom'
           },
-          {
-            prop: 'title',
-            label: this.$t('tickets.title'),
+          title: {
+            label: this.$t('Title'),
             formatter: DetailFormatter,
             sortable: 'custom',
             formatterArgs: {
               getRoute: function({ row }) {
-                if (row.type === 'apply_asset') {
+                const type = row.type.value
+                if (type === 'apply_asset') {
                   return 'AssetsTicketDetail'
-                } else if (row.type === 'apply_application') {
-                  return 'AppsTicketDetail'
-                } else if (row.type === 'login_asset_confirm') {
+                } else if (type === 'login_asset_confirm') {
                   return 'LoginAssetTicketDetail'
-                } else if (row.type === 'login_confirm') {
+                } else if (type === 'login_confirm') {
                   return 'LoginTicketDetail'
-                } else if (row.type === 'command_confirm') {
+                } else if (type === 'command_confirm') {
                   return 'CommandConfirmDetail'
                 } else {
                   return 'TicketDetail'
@@ -60,156 +70,136 @@ export default {
               }
             }
           },
-          {
-            prop: 'applicant',
-            label: this.$t('tickets.user'),
+          applicant: {
+            label: this.$t('Applicant'),
             sortable: 'custom',
             formatter: row => {
-              return row.rel_snapshot.applicant
+              return row['rel_snapshot'].applicant
             }
           },
-          {
-            prop: 'type_display',
-            label: this.$t('tickets.type'),
-            width: '160px'
+          type: {
+            label: this.$t('Type'),
+            formatter: row => {
+              return row.type.label
+            }
           },
-          {
-            prop: 'status',
-            label: this.$t('tickets.status'),
+          status: {
             align: 'center',
-            width: '90px',
             sortable: 'custom',
-            formatter: row => {
-              if (row.status === 'open') {
-                return <el-tag type='primary' size='mini'> { this.$t('tickets.OpenStatus') }</el-tag>
-              } else {
-                return <el-tag type='danger' size='mini'>  { this.$t('tickets.CloseStatus') }</el-tag>
+            formatter: TagChoicesFormatter,
+            formatterArgs: {
+              getTagLabel({ row }) {
+                return row.status.label
+              },
+              getTagType({ row }) {
+                if (row.status.value === 'open') {
+                  return 'primary'
+                } else {
+                  return 'danger'
+                }
               }
             }
           },
-          {
-            prop: 'state',
-            label: this.$t('tickets.action'),
+          state: {
+            label: this.$t('Action'),
             align: 'center',
-            width: '90px',
             sortable: 'custom',
-            formatter: row => {
-              if (row.status === 'open') {
-                return <el-tag
-                  type='success'
-                  size='mini'
-                >
-                  { this.$t('tickets.Pending') }
-                </el-tag>
-              }
-              switch (row.state) {
-                case 'approved':
-                  return <el-tag type='primary' size='mini'>
-                    { this.$t('tickets.Approved') }
-                  </el-tag>
-                case 'rejected':
-                  return <el-tag type='danger' size='mini'>
-                    { this.$t('tickets.Rejected') }
-                  </el-tag>
-                default :
-                  return <el-tag type='info' size='mini'>
-                    { this.$t('tickets.Closed') }
-                  </el-tag>
+            formatter: TagChoicesFormatter,
+            formatterArgs: {
+              getTagType({ row }) {
+                const mapper = {
+                  [OPEN]: 'success',
+                  [APPROVE]: 'primary',
+                  [REJECT]: 'danger',
+                  [CLOSED]: 'info'
+                }
+                return mapper[row.state.value] || 'warning'
+              },
+              getTagLabel({ row }) {
+                return row.state.label || vm.$t('Pending')
               }
             }
           },
-          {
-            prop: 'date_created',
-            label: this.$t('tickets.date'),
+          date_created: {
+            label: this.$t('Date'),
             sortable: 'custom',
-            formatter: (row) => toSafeLocalDateStr(row.date_created),
-            width: '160px'
+            formatter: (row) => toSafeLocalDateStr(row.date_created)
           }
-        ]
+        }
       },
-      ticketActions: {
-        hasLeftActions: this.hasMoreActions,
-        hasRightActions: false,
+      defaultTicketActions: {
+        hasExport: false,
+        hasMoreActions: false,
+        hasLeftActions: true,
         canCreate: this.$hasPerm('tickets.view_ticket'),
         hasBulkDelete: false,
         searchConfig: {
           default: {
             state: {
               key: 'state',
-              label: this.$t('tickets.action'),
+              label: this.$t('Action'),
               value: 'pending',
-              valueLabel: this.$t('tickets.Pending')
+              valueLabel: this.$t('Open')
             }
           },
-          exclude: ['state', 'id', 'title'],
+          exclude: ['id', 'title', 'type', 'applicant'],
           options: [
-            {
-              value: 'state',
-              label: this.$t('tickets.action'),
-              type: 'choice',
-              children: [
-                {
-                  default: true,
-                  value: 'pending',
-                  label: this.$t('tickets.Pending')
-                },
-                {
-                  value: APPROVE,
-                  label: this.$t('tickets.Approved')
-                },
-                {
-                  value: REJECT,
-                  label: this.$t('tickets.Rejected')
-                }
-              ]
-            },
             {
               value: 'id',
               label: 'ID'
             },
             {
               value: 'title',
-              label: this.$t('tickets.title')
+              label: this.$t('Title')
             },
             {
-              value: 'relevant_app',
-              label: this.$t('tickets.RelevantApp')
+              value: 'type',
+              label: this.$t('Type'),
+              type: 'choice',
+              children: [
+                {
+                  value: 'apply_asset',
+                  label: this.$t('ApplyAsset')
+                },
+                {
+                  value: 'login_confirm',
+                  label: this.$t('LoginConfirm')
+                },
+                {
+                  value: 'command_confirm',
+                  label: this.$t('CommandConfirm')
+                },
+                {
+                  value: 'login_asset_confirm',
+                  label: this.$t('LoginAssetConfirm')
+                }
+              ]
+            },
+            {
+              value: 'applicant_username_name',
+              label: this.$t('Applicant')
             },
             {
               value: 'relevant_asset',
-              label: this.$t('tickets.RelevantAsset')
+              label: this.$t('RelevantAsset')
             },
             {
               value: 'relevant_system_user',
-              label: this.$t('tickets.RelevantCommand')
+              label: this.$t('RelevantCommand')
             },
             {
               value: 'relevant_command',
-              label: this.$t('tickets.RelevantSystemUser')
+              label: this.$t('ApplyRunCommand')
             }
           ]
         },
-        createTitle: this.$t('common.RequestTickets'),
-        hasMoreActions: false,
-        moreCreates: {
-          dropdown: [
-            {
-              name: 'RequestAssetPerm',
-              title: this.$t('tickets.RequestAssetPerm'),
-              callback: () => this.$router.push({
-                name: 'RequestAssetPermTicketCreateUpdate'
-              })
-            },
-            {
-              name: 'RequestApplicationPerm',
-              title: this.$t('tickets.RequestApplicationPerm'),
-              callback: () => this.$router.push({
-                name: 'RequestApplicationPermTicketCreateUpdate'
-              })
-            }
-          ]
-        }
+        createTitle: this.$t('RequestTickets')
       }
+    }
+  },
+  computed: {
+    iTicketAction() {
+      return Object.assign({}, this.defaultTicketActions, this.extraTicketAction)
     }
   },
   mounted() {
@@ -218,6 +208,9 @@ export default {
     }, 500)
   },
   methods: {
+    reloadTable() {
+      this.$refs.ListPage.$refs.ListTable.$refs.ListTable.reloadTable()
+    }
   }
 }
 </script>

@@ -15,6 +15,7 @@ export function testEmailSetting(data) {
     data: data
   })
 }
+
 export function importLicense(formData) {
   return request({
     url: '/api/v1/xpack/license/import',
@@ -25,12 +26,29 @@ export function importLicense(formData) {
     data: formData
   })
 }
-export function testLdapSetting(data) {
-  return request({
-    disableFlashErrorMsg: true,
-    url: '/api/v1/settings/ldap/testing/config/',
-    method: 'post',
-    data: data
+
+export function testLdapSetting(data, refresh = true) {
+  let url = '/api/v1/settings/ldap/testing/config/'
+  if (refresh) {
+    url = url + '?refresh=1'
+  }
+  return new Promise((resolve, reject) => {
+    request({
+      disableFlashErrorMsg: true,
+      url: url,
+      method: 'post',
+      data: data
+    }).then(res => {
+      if (res.status !== 'running') {
+        resolve(res)
+      } else {
+        setTimeout(() => {
+          resolve(testLdapSetting(data, false))
+        }, 1000)
+      }
+    }).catch(error => {
+      reject(error)
+    })
   })
 }
 
@@ -80,9 +98,17 @@ export function getPublicSettings(isOpen) {
     method: 'get'
   })
 }
+
 export function getLogo() {
   return request({
     url: '/api/v1/xpack/interface/setting/',
+    method: 'get'
+  })
+}
+
+export function getPreference() {
+  return request({
+    url: '/api/v1/users/preference/?category=luna',
     method: 'get'
   })
 }

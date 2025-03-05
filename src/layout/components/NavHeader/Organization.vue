@@ -1,13 +1,15 @@
 <template>
   <el-select
+    :disabled="disabled"
+    :placeholder="$tc('Select')"
     :value="currentOrgId"
-    class="org-select organization"
+    class="org-select"
     filterable
-    :placeholder="$t('common.Select')"
+    popper-class="switch-org"
     @change="changeOrg"
   >
     <template slot="prefix">
-      <i class="fa fa-sitemap icon" />
+      <svg-icon icon-class="organization" />
     </template>
 
     <el-option-group
@@ -19,13 +21,13 @@
       <el-option
         v-for="item in group.options"
         :key="item.id"
-        :selected="item.id === currentOrg.id"
-        :label="item.name"
-        :value="item.id"
         :disabled="item.disabled"
+        :label="item.name"
+        :selected="item.id === currentOrg.id"
+        :value="item.id"
       >
-        <span v-if="item.icon" style="float: right; font-size: 12px">
-          <i class="fa" :class="item.icon" />
+        <span v-if="item.icon" style="font-size: 15px; margin-right: 5px;">
+          <svg-icon :icon-class="item.icon" />
         </span>
         <span>{{ item.name }}</span>
       </el-option>
@@ -44,6 +46,10 @@ export default {
       default: () => {
         return true
       }
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -59,29 +65,29 @@ export default {
     ]),
     orgActionsGroup() {
       const orgActions = {
-        label: this.$t('xpack.Organization.OrganizationList'),
+        label: this.$t('OrganizationList'),
         options: [
           {
             id: 'create',
-            icon: 'fa-plus',
+            icon: 'create',
             disabled: !this.$hasPerm('orgs.add_organization'),
-            name: this.$t('xpack.Organization.OrganizationCreate')
+            name: this.$t('OrganizationCreate')
           },
           {
             id: 'list',
-            icon: 'fa-list-ul',
+            icon: 'list',
             disabled: !this.$hasPerm('orgs.view_organization'),
-            name: this.$t('xpack.Organization.OrganizationLists')
+            name: this.$t('OrganizationManage')
           }
         ]
       }
       const hasPerms = this.$hasPerm('orgs.view_organization | orgs.add_organization')
-      const isConsole = this.currentViewRoute.name === 'console'
+      const isConsole = ['console'].includes(this.currentViewRoute.name)
       return hasPerms && isConsole ? orgActions : {}
     },
     orgChoicesGroup() {
       return {
-        label: this.$t('xpack.Organization.AllOrganization'),
+        label: this.$t('ChangeOrganization'),
         options: this.usingOrgs
       }
     },
@@ -113,7 +119,7 @@ export default {
           this.$router.push({ name: 'OrganizationList' })
           break
         default:
-          orgUtil.changeOrg(org)
+          orgUtil.changeOrg(org, true, this)
       }
     }
   }
@@ -123,68 +129,68 @@ export default {
 <style lang="scss" scoped>
 @import '~@/styles/variables.scss';
 
+$height: 28px;
+
 .org-select {
-  padding: 0 10px 0 18px;
-  line-height: 55px;
-  background-color: #293846;
-  color: white;
-  font-weight: 600;
-  font-size: 15px;
-  //border-top: solid 1px rgb(47, 64, 80);
-  ::v-deep .el-input {
-    input.el-input__inner {
-      line-height: 55px;
-      height: 55px;
-      background: none;
-      border: none;
+  line-height: $height;
+}
+
+::v-deep .el-input {
+  .el-input__inner {
+    height: $height;
+    line-height: $height;
+    background: none;
+    border: none;
+    padding-left: 20px;
+  }
+
+  .el-input__prefix {
+    left: 0;
+  }
+
+  .el-input__suffix > .el-input__suffix-inner i {
+    color: #fff;
+  }
+}
+
+.el-select-dropdown.switch-org {
+  border-radius: 4px;
+  left: 220px !important;
+  max-width: 400px;
+
+  .option-group {
+    padding-right: 8px;
+    padding-left: 8px;
+    max-width: 400px;
+
+    ::v-deep .el-select-group__title {
+      color: var(--color-icon-primary);
+      padding-left: 15px;
+      font-size: 12px;
+      line-height: 30px;
+    }
+
+    ::v-deep .el-select-dropdown__item {
+      padding: 0 15px;
+      line-height: 30px;
+      height: 30px;
     }
   }
 }
 
+.org-select ::v-deep .el-input.is-disabled .el-input__inner {
+  color: #ffffff !important;
+  background-color: transparent;
+}
+
 .icon {
-  color: #606266;
   cursor: pointer;
 }
 
-.organization {
-  height: 35px;
-  line-height: 35px;
-  background: #E0E0E0;
-  border-radius: 19px;
-  color: #606266;
-
-  &:after {
-    position: absolute;
-    top: 15%;
-    left: -16px;
-    content: '';
-    width: 1px;
-    height: 25px;
-    background-color: rgba(144, 147, 152, .5);
-  }
-
-  &>>> .el-input__prefix {
-    left: 8px
-  }
-
-  &>>> .el-input--prefix .el-input__inner {
-    line-height: 35px !important;
-    height: 35px !important;
-  }
-
-  &>>> .fa-sitemap {
-    padding-left: 4px;
-  }
-
-  &>>> .el-input__icon {
-    color: #606266;
-  }
-}
-
-.option-group >>> .el-select-group__title {
-  color: #909399 !important;
-  padding-left: 15px;
-  font-size: 12px;
-  line-height: 30px;
+.line {
+  width: 1px;
+  margin-left: 5px;
+  border: .5px solid #FFF;
+  opacity: 0.4;
 }
 </style>

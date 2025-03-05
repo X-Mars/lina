@@ -22,12 +22,12 @@ export default {
   props: {
     fa: {
       type: String,
-      default: () => 'fa-edit'
+      default: ''
     },
     title: {
       type: String,
       default() {
-        return this.$t('common.QuickUpdate')
+        return this.$t('QuickUpdate')
       }
     },
     actions: {
@@ -39,23 +39,32 @@ export default {
 </script>
 
 <style scoped>
-  .quick-actions >>> table {
-    width: 100%;
-  }
-  .quick-actions >>> tr > td {
-    line-height: 1.43;
-    padding: 8px;
-    vertical-align: top;
-    font-size: 13px;
-    width: 50%;
-  }
+.quick-actions ::v-deep table {
+  width: 100%;
+}
 
-  .quick-actions >>> tr > td > span:last-child {
-    float: right;
-  }
+.quick-actions ::v-deep tr > td {
+  line-height: 1.43;
+  padding: 8px 0;
+  vertical-align: top;
+  font-size: 13px;
+  width: 50%;
+}
 
-  .quick-actions >>> button {
-    padding: 2px 10px;
-    font-size: 13px;
+.quick-actions ::v-deep tr > td > span:last-child {
+  float: right;
+}
+
+.quick-actions ::v-deep button {
+  padding: 4px 5px;
+  font-size: 13px;
+  min-width: 65px;
+
+  span {
+    overflow: hidden;
+    white-space: nowrap; /* 控制文本不换行 */
+    text-overflow: ellipsis;
+    display: block;
   }
+}
 </style>

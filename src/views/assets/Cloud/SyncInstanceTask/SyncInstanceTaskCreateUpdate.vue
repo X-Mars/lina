@@ -4,9 +4,10 @@
 
 <script>
 import { GenericCreateUpdatePage } from '@/layout/components'
-import { Select2, CronTab } from '@/components'
-import rules from '@/components/DataForm/rules'
-import Protocols from '@/views/assets/Asset/components/Protocols/index'
+import { Select2 } from '@/components'
+import rules from '@/components/Form/DataForm/rules'
+import SyncInstanceTaskStrategy from './components/SyncInstanceTaskStrategy/index'
+import { periodicMeta } from '@/components/const'
 
 export default {
   components: {
@@ -19,21 +20,27 @@ export default {
         is_periodic: true,
         interval: 24,
         hostname_strategy: 'instance_name_partial_ip',
-        ip_network_segment_group: '*'
+        ip_network_segment_group: ['*']
       },
       fields: [
         [this.$t('common.Basic'), ['name']],
         [this.$t('xpack.Cloud.CloudSource'), ['account', 'regions']],
-        [this.$t('xpack.Cloud.SaveSetting'), ['hostname_strategy', 'node', 'unix_admin_user', 'windows_admin_user', 'protocols', 'ip_network_segment_group', 'is_always_update']],
+        [this.$t('xpack.Cloud.SaveSetting'), [
+          'hostname_strategy', 'ip_network_segment_group',
+          'sync_ip_type', 'is_always_update', 'fully_synchronous'
+        ]],
+        [this.$t('xpack.Cloud.SyncStrategy'), ['strategy']],
         [this.$t('xpack.Timer'), ['is_periodic', 'crontab', 'interval']],
         [this.$t('common.Other'), ['comment']]
       ],
       url: '/api/v1/xpack/cloud/sync-instance-tasks/',
       fieldsMeta: {
+        ...periodicMeta,
         account: {
+          label: this.$t('xpack.Cloud.Account'),
           on: {
             change: ([event], updateForm) => {
-              vm.fieldsMeta.regions.el.ajax.url = `/api/v1/xpack/cloud/regions/?account_id=${event}`
+              vm.fieldsMeta.regions.el.ajax.url = `/api/v1/xpack/cloud/regions/?account_id=${event?.pk}`
               updateForm({ regions: '' })
             }
           },
@@ -41,52 +48,27 @@ export default {
             multiple: false,
             value: [],
             ajax: {
-              url: '/api/v1/xpack/cloud/accounts/'
+              url: '/api/v1/xpack/cloud/accounts/',
+              transformOption: (item) => {
+                const label = `${item.name}(${item.provider.label})`
+                return { label: label, value: item.id }
+              }
             }
           }
         },
         hostname_strategy: {
           rules: [rules.RequiredChange],
-          helpText: this.$t('xpack.Cloud.HostnameStrategy')
-        },
-        node: {
-          rules: [rules.RequiredChange],
-          el: {
-            multiple: false,
-            value: [],
-            ajax: {
-              url: '/api/v1/assets/nodes/',
-              transformOption: (item) => {
-                return { label: item.full_value, value: item.id }
-              }
-            }
-          }
-        },
-        unix_admin_user: {
-          el: {
-            multiple: false,
-            value: [],
-            ajax: {
-              url: '/api/v1/assets/admin-users/'
-            }
-          }
-        },
-        windows_admin_user: {
-          el: {
-            multiple: false,
-            value: [],
-            ajax: {
-              url: '/api/v1/assets/admin-users/'
-            }
-          }
-        },
-        protocols: {
-          component: Protocols
+          helpTips: this.$t('xpack.Cloud.HostnameStrategy')
         },
         is_always_update: {
-          type: 'switch',
+          type: 'checkbox',
           label: this.$t('xpack.Cloud.IsAlwaysUpdate'),
           helpTips: this.$t('xpack.Cloud.IsAlwaysUpdateHelpTips')
+        },
+        fully_synchronous: {
+          type: 'checkbox',
+          label: this.$t('xpack.Cloud.FullySynchronous'),
+          helpTips: this.$t('xpack.Cloud.FullySynchronousHelpTips')
         },
         regions: {
           component: Select2,
@@ -97,7 +79,7 @@ export default {
             ajax: {
               url: '/api/v1/xpack/cloud/regions/',
               processResults(data) {
-                const results = data.regions.map((item) => {
+                const results = data.regions?.map((item) => {
                   return { label: item.name, value: item.id }
                 })
                 const more = !!data.next
@@ -106,35 +88,30 @@ export default {
             }
           }
         },
-        is_periodic: {
-          type: 'switch'
-        },
-        crontab: {
-          component: CronTab,
-          label: this.$t('xpack.RegularlyPerform'),
-          hidden: (formValue) => {
-            return formValue.is_periodic === false
-          },
-          helpText: this.$t('xpack.HelpText.CrontabOfCreateUpdatePage')
-        },
-        interval: {
-          label: this.$t('xpack.CyclePerform'),
-          hidden: (formValue) => {
-            return formValue.is_periodic === false
-          },
-          helpText: this.$t('xpack.HelpText.IntervalOfCreateUpdatePage')
+        strategy: {
+          label: this.$t('common.Strategy'),
+          component: SyncInstanceTaskStrategy,
+          helpTips: this.$t('xpack.Cloud.StrategyHelpTips')
         }
       },
       updateSuccessNextRoute: { name: 'CloudCenter' },
       createSuccessNextRoute: { name: 'CloudCenter' },
       afterGetFormValue(formValue) {
-        formValue.ip_network_segment_group = formValue.ip_network_segment_group.toString()
+        formValue.protocols = formValue.protocols?.split(' ').map(i => {
+          const [name, port] = i.split('/')
+          return { name, port }
+        })
         return formValue
       },
       cleanFormValue(value) {
-        if (!Array.isArray(value.ip_network_segment_group)) {
-          value.ip_network_segment_group = value.ip_network_segment_group ? value.ip_network_segment_group.split(',') : []
+        const ipNetworkSegments = value.ip_network_segment_group
+        const strategy = value?.strategy || []
+        if (!Array.isArray(ipNetworkSegments)) {
+          value.ip_network_segment_group = ipNetworkSegments ? ipNetworkSegments.split(',') : []
         }
+        value.strategy = strategy.map(item => {
+          return item.id
+        })
         return value
       },
       onPerformError(error, method, vm) {
@@ -161,11 +138,10 @@ export default {
     // 更新获取链接
     if (params.id) {
       const form = await this.$refs.createUpdatePage.$refs.createUpdateForm.getFormValue()
-      this.fieldsMeta.regions.el.ajax.url = form.account ? `/api/v1/xpack/cloud/regions/?account_id=${form.account}` : `/api/v1/xpack/cloud/regions/`
+      this.fieldsMeta.regions.el.ajax.url = form.account?.id ? `/api/v1/xpack/cloud/regions/?account_id=${form.account.id}` : `/api/v1/xpack/cloud/regions/`
     }
   },
-  methods: {
-  }
+  methods: {}
 }
 
 </script>

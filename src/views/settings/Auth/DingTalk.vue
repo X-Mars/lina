@@ -8,7 +8,8 @@
 
 <script>
 import BaseAuth from './Base'
-import { UpdateToken } from '@/components/FormFields'
+import { JsonEditor, UpdateToken } from '@/components/Form/FormFields'
+import { getOrgSelect2Meta } from '@/views/settings/Auth/const'
 
 export default {
   name: 'DingTalk',
@@ -22,7 +23,7 @@ export default {
         url: '/api/v1/settings/setting/?category=dingtalk',
         moreButtons: [
           {
-            title: this.$t('setting.dingTalkTest'),
+            title: this.$t('DingTalkTest'),
             loading: false,
             callback: function(value, form, btn) {
               btn.loading = true
@@ -39,18 +40,23 @@ export default {
         ],
         encryptedFields: ['DINGTALK_APPSECRET'],
         fields: [
-          [
-            this.$t('common.BasicInfo'),
-            [
-              'AUTH_DINGTALK', 'DINGTALK_AGENTID',
-              'DINGTALK_APPKEY', 'DINGTALK_APPSECRET'
-            ]
-          ]
+          [this.$t('Basic'), [
+            'AUTH_DINGTALK', 'DINGTALK_AGENTID',
+            'DINGTALK_APPKEY', 'DINGTALK_APPSECRET',
+            'DINGTALK_RENAME_ATTRIBUTES'
+          ]],
+          [this.$t('Other'), [
+            'DINGTALK_ORG_IDS'
+          ]]
         ],
         fieldsMeta: {
           DINGTALK_APPSECRET: {
             component: UpdateToken
-          }
+          },
+          DINGTALK_RENAME_ATTRIBUTES: {
+            component: JsonEditor
+          },
+          DINGTALK_ORG_IDS: getOrgSelect2Meta()
         },
         hasDetailInMsg: false,
         submitMethod() {
