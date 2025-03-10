@@ -7,21 +7,28 @@
         <i class="el-icon-arrow-down el-icon--right" />
       </span>
       <el-dropdown-menu slot="dropdown">
-        <el-dropdown-item icon="el-icon-user" command="profile">
-          {{ $t('common.nav.Profile') }}
+        <el-dropdown-item command="ProfileIndex">
+          <svg-icon class="icon" icon-class="attestation" />
+          {{ $t('YourProfile') }}
         </el-dropdown-item>
-        <el-dropdown-item v-if="$hasPerm('authentication.view_accesskey')" icon="el-icon-key" command="apiKey">
-          {{ $t('common.nav.APIKey') }}
+
+        <el-dropdown-item command="PasswordAndSSHKey">
+          <svg-icon class="icon" icon-class="personal" />
+          {{ $t('PasswordAndSSHKey') }}
         </el-dropdown-item>
-        <el-dropdown-item v-if="$store.getters.publicSettings.AUTH_TEMP_TOKEN && $hasPerm('authentication.view_temptoken')" icon="el-icon-magic-stick" command="tempPassword">
-          {{ $t('common.nav.TempPassword') }}
+
+        <!--  Preference -->
+        <el-dropdown-item command="Preferences" divided>
+          <svg-icon class="icon" icon-class="preference" />
+          {{ $t('Preferences') }}
         </el-dropdown-item>
-        <el-dropdown-item v-if="$hasPerm('authentication.view_connectiontoken')" icon="el-icon-place" command="connectionToken">
-          {{ $t('common.nav.ConnectionToken') }}
+
+        <!-- logout -->
+        <el-dropdown-item command="logout" divided>
+          <svg-icon class="icon" icon-class="logout" />
+          {{ $t('Logout') }}
         </el-dropdown-item>
-        <el-dropdown-item divided command="logout"><svg-icon icon-class="logout" style="margin-right: 4px" />
-          {{ $t('common.nav.Logout') }}
-        </el-dropdown-item>
+
       </el-dropdown-menu>
     </el-dropdown>
   </div>
@@ -34,7 +41,7 @@ export default {
   name: 'AccountDropdown',
   data() {
     return {
-      avatarUrl: require('@/assets/img/admin.png'),
+      avatarUrl: require('@/assets/img/avatar.png'),
       showApiKey: false
     }
   },
@@ -48,37 +55,52 @@ export default {
   methods: {
     handleClick(val) {
       switch (val) {
-        case 'profile':
-          this.$router.push('/profile')
+        case 'ProfileIndex':
+          this.$router.push({ name: 'Profile' })
+          break
+        case 'PasswordAndSSHKey':
+          this.$router.push({ name: 'SSHKeyList' })
+          break
+        case 'Preferences':
+          this.$router.push({ name: 'Preferences' })
           break
         case 'logout':
           this.logout()
-          window.location.href = `${process.env.VUE_APP_LOGOUT_PATH}?next=${this.$route.fullPath}`
           break
-        case 'apiKey':
-          this.$router.push('/profile/key')
-          break
-        case 'tempPassword':
-          this.$router.push('/profile/temp-password')
-          break
-        case 'connectionToken':
-          this.$router.push('/profile/connection-token')
       }
     },
-    logout() {
+    async logout() {
+      const currentOrg = this.$store.getters.currentOrg
+      if (currentOrg.autoEnter || currentOrg.is_system) {
+        await this.$store.dispatch('users/setCurrentOrg', this.$store.getters.preOrg)
+      }
+      window.location.href = `${process.env.VUE_APP_LOGOUT_PATH}?next=${this.$route.fullPath}`
     }
   }
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+  .header-profile {
+    .el-dropdown {
+      color: #fff;
+    }
+  }
+
   .header-avatar {
     height: 24px;
     width: 24px;
     margin-right: 5px;
     vertical-align: middle;
+    background: white;
   }
+
   .mobile .header-avatar {
     display: none;
+  }
+
+  .icon {
+    font-size: 14px;
+    margin-right: 3px;
   }
 </style>

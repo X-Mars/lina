@@ -24,28 +24,28 @@ export default {
     ]),
     expireMsg() {
       // 用户来源不是Local时不显示密码过期提示
-      if (this.currentUser.source !== 'local') {
+      if (this.currentUser.source.value !== 'local') {
         return false
       }
       const intervalTime = this.getIntervalDays(this.currentUser.date_password_last_updated)
       const securityPasswordExpirationTime = this.publicSettings.SECURITY_PASSWORD_EXPIRATION_TIME
       if (intervalTime >= securityPasswordExpirationTime) {
-        return this.$t('users.passwordExpired')
+        return this.$t('PasswordExpired')
       }
       if (securityPasswordExpirationTime - intervalTime <= 5) {
-        return this.$t('users.passwordWillExpiredPrefixMsg') +
+        return this.$t('PasswordWillExpiredPrefixMsg') +
           (securityPasswordExpirationTime - intervalTime) +
-          this.$t('users.passwordWillExpiredSuffixMsg')
+          this.$t('PasswordWillExpiredSuffixMsg')
       }
       return false
     }
   },
   methods: {
     getIntervalDays(date) {
+      date = new Date(date)
       const dateExpired = this.$moment(date, 'YYYY-MM-DD').format('YYYY-MM-DD')
       const dateNow = this.$moment(new Date()).format('YYYY-MM-DD')
-      const intervalTime = this.$moment(dateNow).diff(this.$moment(dateExpired), 'days')
-      return intervalTime
+      return this.$moment(dateNow).diff(this.$moment(dateExpired), 'days')
     }
   }
 }

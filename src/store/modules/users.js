@@ -1,17 +1,19 @@
-import { logout, getProfile as apiGetProfile } from '@/api/users'
+import { getProfile as apiGetProfile, logout } from '@/api/users'
 import {
-  getCurrentOrgLocal,
-  getTokenFromCookie,
-  saveCurrentOrgLocal
+  getCurrentOrgLocal, getPreOrgLocal, getTokenFromCookie, saveCurrentOrgLocal, setPreOrgLocal
 } from '@/utils/auth'
+import orgUtil from '@/utils/org'
 import { resetRouter } from '@/router'
 import Vue from 'vue'
+import store from '@/store'
+
 const _ = require('lodash')
 
 const getDefaultState = () => {
   return {
     token: getTokenFromCookie(),
     currentOrg: '',
+    preOrg: '',
     profile: {},
     username: '',
     auditOrgs: [],
@@ -41,6 +43,7 @@ const mutations = {
     state.profile = profile
     state.username = profile.username
     state.perms = profile.perms
+    state.isSuperAdmin = profile['is_superuser']
     state.consoleOrgs = profile['console_orgs']
     state.workbenchOrgs = profile['workbench_orgs']
     state.noRootWorkbenchOrgs = profile['workbench_orgs'].filter(item => {
@@ -48,6 +51,7 @@ const mutations = {
     })
     state.auditOrgs = profile['audit_orgs']
     state.currentOrg = getCurrentOrgLocal(profile.username)
+    state.preOrg = getPreOrgLocal(profile.username)
   },
   SET_USING_ORGS: (state, orgs) => {
     state.usingOrgs = orgs
@@ -63,7 +67,16 @@ const mutations = {
   ADD_ORG: (state, org) => {
     state.consoleOrgs.push(org)
   },
+  DELETE_ORG: (state, org) => {
+    state.consoleOrgs = state.consoleOrgs.filter(i => i.id !== org.id)
+  },
   SET_CURRENT_ORG(state, org) {
+    // 系统组织不设置成 Pre org
+    const currentOrg = state.currentOrg
+    if (currentOrg && !currentOrg.autoEnter && !currentOrg.is_system) {
+      state.preOrg = currentOrg
+      setPreOrgLocal(state.username, currentOrg)
+    }
     state.currentOrg = org
     saveCurrentOrgLocal(state.username, org)
   },
@@ -90,6 +103,11 @@ const actions = {
         if (!response) {
           reject('Verification failed, please Login again.')
         }
+        if (typeof response !== 'object') {
+          // 后端 middleware 对 API 做了校验，这里返回可能是 302 重定向, response 为 string 类型
+          resolve(response)
+          return
+        }
         commit('SET_PROFILE', response)
         resolve(response)
       }).catch(error => {
@@ -100,6 +118,9 @@ const actions = {
   },
   addAdminOrg({ commit, state }, org) {
     commit('ADD_ORG', org)
+  },
+  deleteAdminOrg({ commit }, org) {
+    commit('DELETE_ORG', org)
   },
   modifyOrg({ commit, state }, org) {
     commit('MODIFY_ORG', org)
@@ -120,6 +141,41 @@ const actions = {
   setCurrentOrg({ commit }, data) {
     commit('SET_CURRENT_ORG', data)
   },
+  enterSettingOrg({ commit }) {
+    const systemOrg = {
+      id: orgUtil.SYSTEM_ORG_ID,
+      name: 'SystemSetting',
+      is_system: true,
+      autoEnter: new Date().getTime()
+    }
+    commit('SET_CURRENT_ORG', systemOrg)
+  },
+  leaveSettingOrg({ commit }) {
+    const preOrg = store.state.users.preOrg
+    if (!preOrg) {
+      return
+    }
+    commit('SET_CURRENT_ORG', preOrg)
+  },
+  enterGlobalOrg({ commit }) {
+    const globalOrg = {
+      id: orgUtil.GLOBAL_ORG_ID,
+      name: 'Global',
+      is_root: true,
+      autoEnter: new Date().getTime()
+    }
+    commit('SET_CURRENT_ORG', globalOrg)
+  },
+  leaveGlobalOrg({ commit }) {
+    const preOrg = store.state.users.preOrg
+    if (!preOrg) {
+      return
+    }
+    commit('SET_CURRENT_ORG', preOrg)
+  },
+  setPreOrg({ commit }, data) {
+    commit('SET_PRE_ORG', data)
+  },
   currentUserJoinNewOrg({ state, commit }, users) {
     const { profile, currentOrg, workbenchOrgs } = state
     if (users.includes(profile.id)) {
@@ -138,7 +194,8 @@ const actions = {
       console: state.consoleOrgs,
       audit: state.auditOrgs,
       workbench: state.workbenchOrgs,
-      tickets: state.consoleOrgs
+      tickets: state.consoleOrgs,
+      settings: state.consoleOrgs
     }
     const usingOrgs = mapper[viewName] || state.consoleOrgs
     Vue.$log.debug('Set using orgs: ', viewName, usingOrgs)

@@ -1,103 +1,43 @@
 <template>
-  <GenericCreateUpdatePage
-    v-bind="$data"
-    :submit-method="submitMethod"
-    :has-detail-in-msg="false"
-  />
+  <TabPage :active-menu.sync="activeMenu" :submenu="submenu">
+    <keep-alive>
+      <component :is="activeMenu" />
+    </keep-alive>
+  </TabPage>
 </template>
+
 <script>
-import { GenericCreateUpdatePage } from '@/layout/components'
-import PasswordRule from './PasswordRule'
-import AuthLimit from './AuthLimit'
+import TabPage from '@/layout/components/TabPage/index.vue'
+import Auth from './Auth.vue'
+import Password from './Password.vue'
+import AuthLimit from './AuthLimit.vue'
+import Session from './Session.vue'
 
 export default {
-  name: 'Security',
-  components: {
-    GenericCreateUpdatePage
-  },
+  name: 'Index',
+  components: { TabPage, Auth, Password, AuthLimit, Session },
   data() {
     return {
-      fields: [
-        [
-          this.$t('common.Basic'),
-          [
-            'SECURITY_COMMAND_EXECUTION',
-            'SECURITY_SERVICE_ACCOUNT_REGISTRATION',
-            'SECURITY_MAX_IDLE_TIME',
-            'SECURITY_WATERMARK_ENABLED',
-            'SECURITY_SESSION_SHARE'
-          ]
-        ],
-        [
-          this.$t('common.Auth'),
-          [
-            'SECURITY_MFA_AUTH',
-            'SECURITY_MFA_IN_LOGIN_PAGE',
-            'SECURITY_MFA_AUTH_ENABLED_FOR_THIRD_PARTY',
-            'SECURITY_LOGIN_CHALLENGE_ENABLED',
-            'SECURITY_LOGIN_CAPTCHA_ENABLED',
-            'SECURITY_PASSWORD_EXPIRATION_TIME',
-            'SECURITY_MFA_VERIFY_TTL',
-            'SECURITY_CHECK_DIFFERENT_CITY_LOGIN',
-            'AuthLimit',
-            'PasswordRule'
-          ]
-        ]
-      ],
-      fieldsMeta: {
-        SECURITY_LOGIN_CHALLENGE_ENABLED: {
-          on: {
-            change: ([val], updateForm) => {
-              if (val) {
-                updateForm({ SECURITY_MFA_IN_LOGIN_PAGE: false })
-                updateForm({ SECURITY_LOGIN_CAPTCHA_ENABLED: false })
-              }
-            }
-          }
+      activeMenu: 'Auth',
+      submenu: [
+        {
+          title: this.$t('AuthSecurity'),
+          name: 'Auth'
         },
-        SECURITY_MFA_IN_LOGIN_PAGE: {
-          hidden: (form) => {
-            return form['SECURITY_MFA_AUTH'] !== 1 || !this.$store.getters.hasValidLicense
-          },
-          on: {
-            change: ([val], updateForm) => {
-              if (val) {
-                updateForm({ SECURITY_LOGIN_CHALLENGE_ENABLED: false })
-                updateForm({ SECURITY_LOGIN_CAPTCHA_ENABLED: false })
-              }
-            }
-          }
+        {
+          title: this.$t('AuthLimit'),
+          name: 'AuthLimit'
         },
-        SECURITY_LOGIN_CAPTCHA_ENABLED: {
-          on: {
-            change: ([val], updateForm) => {
-              if (val) {
-                updateForm({ SECURITY_LOGIN_CHALLENGE_ENABLED: false })
-                updateForm({ SECURITY_MFA_IN_LOGIN_PAGE: false })
-              }
-            }
-          }
+        {
+          title: this.$t('PasswordSecurity'),
+          name: 'Password'
         },
-        PasswordRule: {
-          label: this.$t('setting.PasswordCheckRule'),
-          component: PasswordRule
-        },
-        AuthLimit: {
-          label: this.$t('setting.AuthLimit'),
-          component: AuthLimit
+        {
+          title: this.$t('SessionSecurity'),
+          name: 'Session'
         }
-      },
-      url: '/api/v1/settings/setting/?category=security'
-    }
-  },
-  methods: {
-    submitMethod() {
-      return 'patch'
+      ]
     }
   }
 }
 </script>
-
-<style scoped>
-
-</style>

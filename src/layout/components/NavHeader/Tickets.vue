@@ -1,7 +1,9 @@
 <template>
   <div>
-    <el-badge :value="assignedTicketCount" :hidden="assignedTicketCount===0" size="mini" type="primary">
-      <el-link class="el-link" target="_blank" @click="goToTickets">{{ $t('route.Ticket') }}</el-link>
+    <el-badge :hidden="assignedTicketCount===0" :value="assignedTicketCount" size="mini" type="primary">
+      <el-link class="el-link" target="_blank" @click="goToTickets">
+        <svg-icon icon-class="ticket" />
+      </el-link>
     </el-badge>
   </div>
 </template>
@@ -33,7 +35,7 @@ export default {
     },
     goToTickets() {
       // this.$router.push({ name: 'TicketList' })
-      this.$router.push('/tickets')
+      this.$router.push('/tickets/assigned-tickets')
     }
   }
 }
@@ -45,7 +47,12 @@ export default {
   font-size: 13px;
   font-weight: 400
 }
-.el-badge ::v-deep .el-badge__content.is-fixed{
-  top:10px;
+
+.el-badge ::v-deep .el-badge__content.is-fixed {
+  top: 10px;
+}
+
+.icon {
+  color: #fff
 }
 </style>

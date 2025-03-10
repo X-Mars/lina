@@ -8,8 +8,9 @@
 
 <script>
 import BaseAuth from './Base'
-import { JsonRequiredUserNameMapped } from '@/components/DataForm/rules'
-import { JsonEditor } from '@/components/FormFields'
+import { JsonRequiredUserNameMapped } from '@/components/Form/DataForm/rules'
+import { JsonEditor } from '@/components/Form/FormFields'
+import { getOrgSelect2Meta } from '@/views/settings/Auth/const'
 
 export default {
   name: 'Cas',
@@ -21,31 +22,30 @@ export default {
       settings: {
         url: '/api/v1/settings/setting/?category=cas',
         fields: [
-          [this.$t('common.Basic'), [
+          [this.$t('Basic'), [
             'AUTH_CAS', 'CAS_SERVER_URL', 'CAS_ROOT_PROXIED_AS', 'CAS_VERSION'
           ]],
-          [this.$t('common.Other'), [
-            'CAS_LOGOUT_COMPLETELY', 'CAS_RENAME_ATTRIBUTES', 'CAS_CREATE_USER'
+          [this.$t('Search'), [
+            'CAS_RENAME_ATTRIBUTES'
+          ]],
+          [this.$t('Other'), [
+            'CAS_ORG_IDS', 'CAS_CREATE_USER', 'CAS_LOGOUT_COMPLETELY'
           ]]
         ],
         fieldsMeta: {
           CAS_RENAME_ATTRIBUTES: {
             component: JsonEditor,
-            label: this.$t('setting.authUserAttrMap'),
             rules: [JsonRequiredUserNameMapped]
-          }
+          },
+          CAS_ORG_IDS: getOrgSelect2Meta()
         },
         submitMethod: () => 'patch',
         afterGetFormValue(obj) {
-          obj.CAS_RENAME_ATTRIBUTES = JSON.stringify(obj.CAS_RENAME_ATTRIBUTES)
           return obj
         },
         cleanFormValue(data) {
           let userNameAttribute = ''
-          const renameAttributes = JSON.parse(data['CAS_RENAME_ATTRIBUTES'])
-          if (renameAttributes) {
-            data['CAS_RENAME_ATTRIBUTES'] = renameAttributes
-          }
+          const renameAttributes = data['CAS_RENAME_ATTRIBUTES']
           for (const key in renameAttributes) {
             if (renameAttributes[key] === 'username') {
               userNameAttribute = key

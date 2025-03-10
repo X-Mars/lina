@@ -1,38 +1,29 @@
 <template>
   <el-tooltip
     v-model="iShowTip"
-    :manual="true"
     :content="tipText"
+    :manual="true"
+    :open-delay="500"
     class="item"
     effect="dark"
     placement="bottom-start"
   >
     <el-menu
-      :default-active="currentViewRoute.name"
-      class="menu-main"
       :class="mode"
+      :default-active="currentViewRoute.name"
       :mode="mode"
+      class="menu-main"
       @select="handleSelectView"
     >
-      <el-submenu
-        index="2"
-        popper-class="view-switcher"
+      <el-menu-item
+        v-for="view of views"
+        :key="view.name"
+        :index="view.name"
       >
-        <template slot="title">
-          <span class="title-label">
-            <i class="fa fa-bars" />
-            <span>{{ $t('common.nav.View') }}</span>
-          </span>
-        </template>
-        <el-menu-item
-          v-for="view of views"
-          :key="view.name"
-          :index="view.name"
-        >
-          <i v-if="mode === 'horizontal'" class="icons" :class="view.meta.icon" />
-          <span slot="title" class="icons-title">{{ view.meta.title }}</span>
-        </el-menu-item>
-      </el-submenu>
+        <span class="outline" />
+        <svg-icon :icon-class="view.meta.icon" class="icons" />
+        <span slot="title" class="icons-title">{{ view.meta.title }}</span>
+      </el-menu-item>
     </el-menu>
   </el-tooltip>
 </template>
@@ -55,7 +46,7 @@ export default {
   },
   data() {
     return {
-      tipText: this.$t('common.ChangeViewHelpText'),
+      tipText: this.$t('ChangeViewHelpText'),
       showTip: true
     }
   },
@@ -117,7 +108,7 @@ export default {
   methods: {
     async handleSelectView(key, keyPath) {
       const routeName = this.viewsMapper[key] || '/'
-      localStorage.setItem('PreView', key)
+      localStorage.setItem('preView', key)
       // Next 之前要重置 init 状态，否则这些路由守卫就不走了
       await store.dispatch('app/reset')
       if (!this.tipHasRead) {
@@ -125,6 +116,7 @@ export default {
         this.iShowTip = false
       }
       this.$router.push(routeName)
+      this.$emit('view-change', routeName)
     }
   }
 }
@@ -133,61 +125,83 @@ export default {
 <style lang="scss" scoped>
 .menu-main.el-menu {
   background-color: transparent;
-  // margin-top: -5px;
+  letter-spacing: 0.09em;
+
   ::v-deep .el-submenu .el-submenu__title {
-    height: 55px;
-    line-height: 55px;
+    height: 38px;
+    line-height: 32px;
     border-bottom: none;
   }
+
   &.el-menu--horizontal {
     border-bottom: none;
   }
-  &>>> .el-icon-arrow-down {
+
+  & ::v-deep .el-icon-arrow-down {
     font-size: 13px;
     color: #606266;
+  }
+
+  .el-menu-item {
+    height: 38px;
+    width: 160px;
+    line-height: 28px;
+    padding: 4px 24px;
+
+    &:hover {
+      background-color: var(--menu-hover);
+    }
   }
 }
 
 .el-menu--horizontal .el-menu .el-menu-item {
-  display: inline-block!important;
+  display: inline-block !important;
   padding: 10px 10px;
   text-align: center;
   height: 70px;
+
   &:hover {
     color: inherit;
+
     i {
       color: inherit;
     }
   }
+
   &:first-child {
     margin-left: 16px;
   }
+
   &:last-child {
     margin-right: 16px;
   }
 }
+
 .el-submenu.is-opened {
   background-color: transparent;
 }
+
 .title-label {
   padding-left: 12px;
   font-size: 14px;
   vertical-align: unset;
-  color: #606266!important;
+  color: #606266 !important;
 }
+
 .icons {
-  display: block;
-  font-size: 23px;
+  vertical-align: middle !important;
+  font-size: 14px;
   text-align: center;
+  color: #1F2329;
+  margin-right: 10px;
 }
+
 .icons-title {
   display: inline-block;
-  font-size: 14px;
-}
-.el-menu-item.is-active {
-  font-weight: bold;
-}
-.menu-main.mobile-view-switch >>> .el-submenu__icon-arrow {
-  right: 10px;
+  font-size: 13px;
+
+  .menu-main.mobile-view-switch ::v-deep .el-submenu__icon-arrow {
+    right: 10px;
+  }
 }
 </style>

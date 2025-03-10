@@ -4,7 +4,7 @@
   </IBox>
 </template>
 <script>
-import IBox from '@/components/IBox'
+import IBox from '@/components/Common/IBox'
 import { GenericCreateUpdateForm } from '@/layout/components'
 
 export default {
@@ -14,40 +14,38 @@ export default {
     GenericCreateUpdateForm
   },
   data() {
-    const comp = this.$t('common.Component')
     return {
       fields: [
         [
-          `SSH ${comp}(KoKo)`,
+          this.$t('Basic'),
+          [
+            'SECURITY_SERVICE_ACCOUNT_REGISTRATION'
+          ]
+        ],
+        [
+          `SSH & KoKo`,
           [
             'TERMINAL_KOKO_SSH_ENABLED',
             'TERMINAL_PASSWORD_AUTH', 'TERMINAL_PUBLIC_KEY_AUTH',
             'TERMINAL_ASSET_LIST_SORT_BY',
-            'TERMINAL_ASSET_LIST_PAGE_SIZE', 'TERMINAL_TELNET_REGEX'
+            'TERMINAL_ASSET_LIST_PAGE_SIZE'
           ]
         ],
         [
-          `RDP ${comp}(Razor)`,
+          `RDP & Razor`,
           [
             'TERMINAL_RAZOR_ENABLED'
           ]
         ],
         [
-          `DB ${comp}(Magnus)`,
+          `DB & Magnus`,
           [
             'TERMINAL_MAGNUS_ENABLED'
           ]
         ]
       ],
       fieldsMeta: {
-        TERMINAL_KOKO_SSH_ENABLED: {
-          helpText: this.$i18n.t('common.Info') + ': ' + this.$i18n.t('setting.EnableKoKoSSHHelpText')
-        },
-        TERMINAL_TELNET_REGEX: {
-          type: 'input'
-        },
         TERMINAL_RAZOR_ENABLED: {
-          helpText: this.$i18n.t('common.Info') + ': ' + this.$i18n.t('setting.SettingInEndpointHelpText'),
           hidden: () => {
             return !this.$store.getters.hasValidLicense
           },
@@ -56,7 +54,12 @@ export default {
           }
         },
         TERMINAL_MAGNUS_ENABLED: {
-          helpText: this.$i18n.t('common.Info') + ': ' + this.$i18n.t('setting.SettingInEndpointHelpText')
+          hidden: () => {
+            return !this.$store.getters.hasValidLicense
+          },
+          el: {
+            hiddenGroup: true
+          }
         }
       },
       getUrl: () => '/api/v1/settings/setting/?category=terminal',
@@ -76,8 +79,7 @@ export default {
       }
     }
   },
-  methods: {
-  }
+  methods: {}
 }
 </script>
 

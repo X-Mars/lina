@@ -1,24 +1,28 @@
 <template>
-  <ListTable ref="ListTable" v-bind="$attrs" v-on="$listeners" />
+  <ListTable ref="ListTable" class="list-table" v-bind="$attrs" v-on="$listeners" />
 </template>
 
 <script>
-import ListTable from '@/components/ListTable/index'
+import ListTable from '@/components/Table/ListTable/index'
 
 export default {
   name: 'GenericListTable',
   components: {
     ListTable
   },
-  computed: {
-  },
-  created() {
+  activated() {
+
   },
   methods: {
+    reloadTable() {
+      this.$refs.ListTable.reloadTable()
+    }
   }
 }
 </script>
 
-<style scoped>
-
+<style scoped lang="scss">
+.list-table {
+  margin-bottom: 20px;
+}
 </style>

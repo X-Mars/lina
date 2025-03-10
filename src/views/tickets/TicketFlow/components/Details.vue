@@ -6,7 +6,7 @@
     <div class="content">
       <el-row :gutter="10">
         <el-col v-for="item in detailCardItems" :key="'card-' + item.key">
-          <el-row class="item" :gutter="10">
+          <el-row :gutter="10" class="item">
             <el-col :md="6" :sm="12">
               <div :style="{ 'text-align': 'align' }" class="item-label">
                 <label>{{ item.key }}: </label>
@@ -41,8 +41,9 @@
   </IBox>
 </template>
 <script>
-import ItemValue from '@/components/DetailCard/ItemValue'
-import IBox from '@/components/IBox'
+import ItemValue from '@/components/Cards/DetailCard/ItemValue'
+import IBox from '@/components/Common/IBox'
+
 export default {
   name: 'Details',
   components: { ItemValue, IBox },
@@ -70,6 +71,7 @@ export default {
 .box {
   margin-bottom: 15px;
 }
+
 .content {
   font-size: 13px;
   line-height: 2.5;

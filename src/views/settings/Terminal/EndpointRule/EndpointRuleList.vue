@@ -1,13 +1,18 @@
 <template>
   <div>
-    <el-alert type="success" v-html="helpMessage" />
-    <ListTable :table-config="tableConfig" :header-actions="headerActions" />
+    <el-alert v-sanitize="helpMessage" type="success" />
+    <ListTable
+      ref="ListTable"
+      :header-actions="headerActions"
+      :table-config="tableConfig"
+      :create-drawer="createDrawer"
+    />
   </div>
 </template>
 
 <script>
-import ListTable from '@/components/ListTable'
-import { ArrayFormatter } from '@/components/TableFormatters'
+import { DrawerListTable as ListTable } from '@/components'
+
 export default {
   name: 'EndpointRule',
   components: {
@@ -15,29 +20,23 @@ export default {
   },
   data() {
     return {
-      helpMessage: this.$t('setting.EndpointRuleListHelpMessage'),
+      createDrawer: () => import('./EndpointRuleCreateUpdate.vue'),
+      helpMessage: this.$t('EndpointRuleListHelpMessage'),
       tableConfig: {
         url: '/api/v1/terminal/endpoint-rules/',
-        columns: [
-          'name', 'ip_group', 'priority', 'endpoint_display', 'date_updated', 'date_created',
-          'created_by', 'comment', 'actions'
-        ],
         columnsShow: {
           min: ['name', 'actions'],
           default: [
-            'name', 'ip_group', 'priority', 'endpoint_display', 'actions'
+            'name', 'ip_group', 'priority', 'endpoint', 'actions'
           ]
         },
         columnsMeta: {
           name: {
             formatter: null
           },
-          ip_group: {
-            formatter: ArrayFormatter,
-            showOverflowTooltip: true
-          },
           actions: {
             formatterArgs: {
+              canUpdate: this.$hasPerm('terminal.change_endpointrule'),
               updateRoute: 'EndpointRuleUpdate',
               cloneRoute: 'EndpointRuleCreate'
             }
@@ -53,7 +52,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-
-</style>

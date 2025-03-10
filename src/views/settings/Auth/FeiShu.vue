@@ -1,63 +1,100 @@
 <template>
   <BaseAuth
     :config="settings"
-    :title="$t('setting.FeiShu')"
-    enable-field="AUTH_FEISHU"
+    :title="title"
+    enable-field="enableFieldName"
     v-on="$listeners"
   />
 </template>
 
 <script>
 import BaseAuth from './Base'
-import { UpdateToken } from '@/components/FormFields'
+import { JsonEditor, UpdateToken } from '@/components/Form/FormFields'
+import { getOrgSelect2Meta } from '@/views/settings/Auth/const'
 
 export default {
-  name: 'Wecom',
+  name: 'Feishu',
   components: {
     BaseAuth
+  },
+  props: {
+    category: {
+      type: String,
+      default: 'feishu'
+    },
+    title: {
+      type: String,
+      default() {
+        return this.$t('Feishu')
+      }
+    },
+    encryptedFields: {
+      type: Array,
+      default: () => ['FEISHU_APP_SECRET']
+    },
+    formFields: {
+      type: Array,
+      default() {
+        return [[this.$t('Basic'), [
+          'AUTH_FEISHU', 'FEISHU_APP_ID',
+          'FEISHU_APP_SECRET', 'FEISHU_RENAME_ATTRIBUTES'
+        ]], [this.$t('Other'), [
+          'FEISHU_ORG_IDS'
+        ]]
+        ]
+      }
+    },
+    formFieldsMeta: {
+      type: Object,
+      default() {
+        return {
+          FEISHU_RENAME_ATTRIBUTES: {
+            component: JsonEditor
+          },
+          FEISHU_ORG_IDS: getOrgSelect2Meta()
+        }
+      }
+    },
+    enableFieldName: {
+      type: String,
+      default: 'AUTH_FEISHU'
+    }
   },
   data() {
     const vm = this
     return {
       settings: {
-        url: '/api/v1/settings/setting/?category=feishu',
+        url: `/api/v1/settings/setting/?category=${vm.category}`,
         hasDetailInMsg: false,
         moreButtons: [
           {
-            title: this.$t('setting.feiShuTest'),
+            title: this.$t('Test'),
             loading: false,
             callback: function(value, form, btn) {
               btn.loading = true
               vm.$axios.post(
-                '/api/v1/settings/feishu/testing/',
+                `/api/v1/settings/${vm.category}/testing/`,
                 value
               ).then(res => {
                 vm.$message.success(res['msg'])
               }).catch(() => {
                 vm.$log.error('err occur')
-              }).finally(() => { btn.loading = false })
+              }).finally(() => {
+                btn.loading = false
+              })
             }
           }
         ],
-        encryptedFields: ['FEISHU_APP_SECRET'],
-        fields: [
-          [
-            this.$t('common.BasicInfo'),
-            [
-              'AUTH_FEISHU', 'FEISHU_APP_ID', 'FEISHU_APP_SECRET'
-            ]
-          ]
-        ],
-        fieldsMeta: {
-          FEISHU_APP_SECRET: {
-            component: UpdateToken
-          }
-        },
+        encryptedFields: this.encryptedFields,
+        fields: this.formFields,
+        fieldsMeta: this.formFieldsMeta,
         // 不清理的话，编辑secret，在删除提交会报错
         cleanFormValue(data) {
-          if (!data['FEISHU_APP_SECRET']) {
-            delete data['FEISHU_APP_SECRET']
-          }
+          this.encryptedFields.forEach(field => {
+            if (!data[field]) {
+              delete data[field]
+            }
+          })
           return data
         },
         submitMethod() {
@@ -66,8 +103,17 @@ export default {
       }
     }
   },
-  methods: {
-  }
+  mounted() {
+    const newFieldsMeta = this.encryptedFields.reduce((acc, field) => {
+      acc[field] = {
+        component: UpdateToken
+      }
+      return acc
+    }, {})
+
+    Object.assign(this.settings.fieldsMeta, newFieldsMeta)
+  },
+  methods: {}
 }
 </script>
 
