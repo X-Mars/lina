@@ -1,9 +1,9 @@
 <template>
-  <GrantedAssets :tree-url="treeUrl" :table-url="tableUrl" />
+  <GrantedAssets v-bind="$data" />
 </template>
 
 <script>
-import GrantedAssets from '@/components/GrantedAssets'
+import GrantedAssets from '@/components/Apps/GrantedAssets'
 
 export default {
   name: 'UserGrantedAssets',
@@ -18,13 +18,13 @@ export default {
   },
   data() {
     return {
-      treeUrl: `/api/v1/perms/users/${this.object.id}/nodes/children/tree/?cache_policy=1`,
-      tableUrl: `/api/v1/perms/users/${this.object.id}/assets/?cache_policy=1&all=1`
+      treeUrl: `/api/v1/perms/users/${this.object.id}/nodes/children/tree/`,
+      tableUrl: `/api/v1/perms/users/${this.object.id}/assets/?all=1`,
+      actions: {
+        has: false
+      },
+      nameDisabled: false
     }
   }
 }
 </script>
-
-<style scoped>
-
-</style>

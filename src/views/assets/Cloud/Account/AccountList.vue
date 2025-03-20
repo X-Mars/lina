@@ -1,170 +1,190 @@
 <template>
-  <GenericListTable :table-config="tableConfig" :header-actions="headerActions" />
+  <div>
+    <SmallCard ref="table" class="account-table" v-bind="table" />
+    <CreateDialog
+      v-if="visible"
+      :visible.sync="visible"
+      v-bind="providerConfig"
+    />
+    <UpdateDialog
+      v-if="updateVisible"
+      :object="object"
+      :visible.sync="updateVisible"
+      @submitSuccess="onSubmitSuccess"
+    />
+    <SyncDialog
+      v-if="onlineSyncVisible"
+      :object="object"
+      :visible.sync="onlineSyncVisible"
+    />
+  </div>
 </template>
 
 <script type="text/jsx">
-import GenericListTable from '@/layout/components/GenericListTable'
-import { ACCOUNT_PROVIDER_ATTRS_MAP, aliyun, aws_china, aws_international, huaweicloud, qcloud, qcloud_lighthouse, azure, azure_international, vmware, nutanix, qingcloud_private, huaweicloud_private, ctyun_private, openstack, gcp, baiducloud, jdcloud, fc, lan } from '../const'
+import { lan, privateCloudProviders, publicCloudProviders } from '../const'
+import CreateDialog from './components/CreateDialog.vue'
+import UpdateDialog from './components/UpdateDialog.vue'
+import SyncDialog from './components/SyncDialog.vue'
+import SmallCard from '@/components/Table/InfoCardTable/index.vue'
+import { ACCOUNT_PROVIDER_ATTRS_MAP } from '@/views/assets/Cloud/const'
+import { toSafeLocalDateStr } from '@/utils/time'
 
 export default {
-  name: 'AccountList',
+  name: 'CloudAccountList',
   components: {
-    GenericListTable
+    SyncDialog,
+    SmallCard,
+    CreateDialog,
+    UpdateDialog
   },
   data() {
     const vm = this
     return {
-      tableConfig: {
-        url: '/api/v1/xpack/cloud/accounts/',
-        permissions: {
-          app: 'xpack',
-          resource: 'account'
+      object: null,
+      table: {
+        tableConfig: {
+          url: '/api/v1/xpack/cloud/accounts/',
+          permissions: {
+            app: 'xpack',
+            resource: 'account'
+          }
         },
-        columns: [
-          'name', 'provider', 'validity', 'date_created', 'comment', 'actions'
-        ],
-        columnsMeta: {
-          name: {
-            sortable: true,
-            showOverflowTooltip: true,
-            formatterArgs: {
-              route: 'AccountDetail'
-            }
+        subComponentProps: {
+          handleUpdate: (obj) => {
+            this.object = obj
+            this.updateVisible = true
           },
-          provider: {
-            width: '120px'
+          getImage: (obj) => {
+            return ACCOUNT_PROVIDER_ATTRS_MAP[obj.provider.value].image
           },
-          actions: {
-            formatterArgs: {
-              updateRoute: 'AccountUpdate',
-              hasClone: false,
-              onUpdate: ({ row, col }) => {
-                vm.$router.push({ name: 'AccountUpdate', params: { id: row.id }, query: { provider: row.provider }})
+          getInfos: (obj) => {
+            return [
+              {
+                title: this.$tc('TotalSyncRegion'),
+                content: obj?.task.regions.length
               },
-              extraActions: [
-                {
-                  name: 'TestConnection',
-                  title: this.$t('assets.TestConnection'),
-                  can: () => vm.$hasPerm('xpack.test_account'),
-                  callback: function(val) {
-                    this.$axios.get(`/api/v1/xpack/cloud/accounts/${val.row.id}/test-connective/`).then(res => {
-                      this.$message.success(this.$t('common.TestSuccessMsg'))
-                    })
-                  }
-                }
-              ]
+              {
+                title: this.$tc('TotalSyncAsset'),
+                content: obj?.task.instance_count
+              },
+              {
+                title: this.$tc('DateLastSync'),
+                content: toSafeLocalDateStr(obj?.task.date_last_sync)
+              }
+            ]
+          },
+          actions: [
+            {
+              id: 'online-sync',
+              name: this.$tc('SyncOnline'),
+              icon: 'el-icon-thumb',
+              callback: this.handleOnlineExecute,
+              disabled: !this.$hasPerm('xpack.change_syncinstancetask')
             }
+          ]
+        },
+        headerActions: {
+          hasImport: false,
+          hasExport: false,
+          hasColumnSetting: false,
+          hasMoreActions: false,
+          searchConfig: {
+            getUrlQuery: false
+          },
+          moreCreates: {
+            loading: false,
+            callback: (option) => {
+              vm.$router.push({ name: 'AccountCreate', query: { provider: option.name }})
+            },
+            dropdown: [
+              {
+                name: 'publicCloud',
+                title: this.$t('PublicCloud'),
+                icon: 'public-cloud',
+                callback: () => {
+                  this.providerConfig.providers = publicCloudProviders.map(
+                    (item) => ACCOUNT_PROVIDER_ATTRS_MAP[item]
+                  )
+                  this.visible = true
+                }
+              },
+              {
+                name: 'privateCloud',
+                icon: 'private-cloud',
+                title: this.$t('PrivateCloud'),
+                callback: () => {
+                  this.providerConfig.providers = privateCloudProviders.map(
+                    (item) => ACCOUNT_PROVIDER_ATTRS_MAP[item]
+                  )
+                  this.visible = true
+                }
+              },
+              {
+                name: 'LAN',
+                title: this.$t('LAN'),
+                icon: 'computer',
+                callback: () => {
+                  const providers = [lan]
+                  this.providerConfig.providers = providers.map(
+                    (item) => ACCOUNT_PROVIDER_ATTRS_MAP[item]
+                  )
+                  this.visible = true
+                }
+              }
+            ]
           }
         }
       },
-      headerActions: {
-        hasBulkDelete: false,
-        hasImport: false,
-        hasMoreActions: false,
-        searchConfig: {
-          getUrlQuery: false
-        },
-        moreCreates: {
-          callback: (option) => {
-            vm.$router.push({ name: 'AccountCreate', query: { provider: option.name }})
-          },
-          dropdown: [
-            {
-              name: aliyun,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[aliyun].title,
-              type: 'primary',
-              group: this.$t('common.PublicCloud'),
-              can: true
-            },
-            {
-              name: qcloud,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[qcloud].title,
-              type: 'primary',
-              can: true
-            },
-            {
-              name: qcloud_lighthouse,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[qcloud_lighthouse].title
-            },
-            {
-              name: huaweicloud,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[huaweicloud].title
-            },
-            {
-              name: baiducloud,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[baiducloud].title
-            },
-            {
-              name: jdcloud,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[jdcloud].title
-            },
-            {
-              name: aws_china,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[aws_china].title
-            },
-            {
-              name: aws_international,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[aws_international].title
-            },
-            {
-              name: azure,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[azure].title
-            },
-            {
-              name: azure_international,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[azure_international].title
-            },
-            {
-              name: gcp,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[gcp].title
-            },
-            {
-              name: vmware,
-              group: this.$t('common.PrivateCloud'),
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[vmware].title
-            },
-            {
-              name: qingcloud_private,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[qingcloud_private].title
-            },
-            {
-              name: huaweicloud_private,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[huaweicloud_private].title
-            },
-            {
-              name: ctyun_private,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[ctyun_private].title
-            },
-            {
-              name: openstack,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[openstack].title
-            },
-            {
-              name: nutanix,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[nutanix].title
-            },
-            {
-              name: fc,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[fc].title
-            },
-            {
-              name: lan,
-              title: ACCOUNT_PROVIDER_ATTRS_MAP[lan].title
-            }
-          ]
+      providerConfig: {
+        providers: []
+      },
+      visible: false,
+      updateVisible: false,
+      onlineSyncVisible: false
+    }
+  },
+  watch: {
+    visible: {
+      handler(val) {
+        if (!val) {
+          this.$refs.table.reloadTable()
+        }
+      }
+    },
+    onlineSyncVisible: {
+      handler(newValue) {
+        if (newValue === false) {
+          this.$refs.table.reloadTable()
+        }
+      }
+    },
+    updateVisible: {
+      handler(newValue) {
+        if (newValue === false) {
+          this.$refs.table.reloadTable()
         }
       }
     }
   },
   methods: {
-    createAccount(provider) {
-      return () => { this.$router.push({ name: 'AccountCreate', query: { provider: provider }}) }
+    valid(status) {
+      if (status !== 200) {
+        this.$message.error(this.$tc('TestAccountConnectionError'))
+        return 200
+      }
+      return status
+    },
+    handleOnlineExecute(obj) {
+      this.object = obj
+      this.onlineSyncVisible = true
+    },
+    onSubmitSuccess() {
+      this.$refs.table.reloadTable()
+      this.updateVisible = false
     }
   }
-
 }
 </script>
-
-<style>
+<style lang="scss" scoped>
 
 </style>

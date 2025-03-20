@@ -1,9 +1,9 @@
 <template>
-  <ListTable :table-config="tableConfig" :header-actions="headerActions" />
+  <ListTable :header-actions="headerActions" :table-config="tableConfig" />
 </template>
 
 <script>
-import ListTable from '@/components/ListTable'
+import ListTable from '@/components/Table/ListTable'
 
 export default {
   name: 'SessionJoinRecords',
@@ -21,8 +21,8 @@ export default {
       tableConfig: {
         url: `/api/v1/terminal/session-join-records/?session=${this.object.id}`,
         columns: [
-          'joiner_display', 'verify_code', 'reason', 'is_success', 'is_finished',
-          'date_joined', 'date_left', 'org_name'
+          'joiner_display', 'reason', 'is_success', 'is_finished',
+          'date_joined', 'date_left', 'org_name', 'action_permission'
         ],
         columnsShow: {
           min: ['joiner_display', 'is_success', 'reason'],
@@ -31,6 +31,9 @@ export default {
           ]
         },
         columnsMeta: {
+          is_success: {
+            width: '150px'
+          },
           is_finished: {
             width: '150px',
             formatterArgs: {

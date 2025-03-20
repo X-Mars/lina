@@ -6,7 +6,7 @@
 
 <script>
 import { GenericCreateUpdateForm } from '@/layout/components'
-import IBox from '@/components/IBox'
+import IBox from '@/components/Common/IBox'
 
 export default {
   components: {
@@ -17,22 +17,12 @@ export default {
     return {
       url: '/api/v1/settings/setting/?category=auth',
       fields: [
-        [
-          this.$t('common.Basic'),
-          [
-            'FORGOT_PASSWORD_URL',
-            'LOGIN_REDIRECT_MSG_ENABLED'
-          ]
-        ]
+        'EMAIL_SUFFIX', 'FORGOT_PASSWORD_URL', 'LOGIN_REDIRECT_MSG_ENABLED'
       ],
       fieldsMeta: {
         FORGOT_PASSWORD_URL: {
-          on: {
-            change([value], updateForm) {
-              if (value && !value.startsWith('http')) {
-                updateForm({ FORGOT_PASSWORD_URL: 'http://' + value })
-              }
-            }
+          el: {
+            placeholder: this.$t('ForgotPasswordURL')
           }
         }
       },
@@ -40,6 +30,8 @@ export default {
         return 'patch'
       }
     }
+  },
+  mounted() {
   }
 }
 </script>

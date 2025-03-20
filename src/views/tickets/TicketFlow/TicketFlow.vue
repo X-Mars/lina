@@ -1,10 +1,17 @@
 <template>
-  <GenericListPage ref="GenericListPage" :table-config="tableConfig" :header-actions="headerActions" />
+  <GenericListPage
+    ref="GenericListPage"
+    :header-actions="headerActions"
+    :table-config="tableConfig"
+    :create-drawer="createDrawer"
+    :detail-drawer="detailDrawer"
+  />
 </template>
 
 <script>
 import { GenericListPage } from '@/layout/components'
-import { DetailFormatter } from '@/components/TableFormatters'
+import { DetailFormatter } from '@/components/Table/TableFormatters'
+
 export default {
   name: 'TicketFlow',
   components: {
@@ -13,31 +20,45 @@ export default {
   data() {
     const vm = this
     return {
+      createDrawer: () => import('@/views/tickets/TicketFlow/FlowCreateUpdate'),
+      detailDrawer: () => import('@/views/tickets/TicketFlow/Detail'),
       tableConfig: {
         url: '/api/v1/tickets/flows/',
-        columns: [
-          'type_display', 'created_by', 'org_name',
-          'date_created', 'date_updated', 'actions'
-        ],
+        columnsExclude: ['rules'],
         columnsShow: {
-          min: ['actions'],
+          min: ['type', 'actions'],
           default: [
-            'type_display', 'created_by', 'org_name',
+            'type', 'created_by', 'org_name',
             'date_created', 'date_updated', 'actions'
           ]
         },
         columnsMeta: {
           org_name: {
             formatter: function(row, col, cell) {
-              var currentOrg = vm.$store.getters.currentOrg
-              return currentOrg.is_root ? row.org_name : currentOrg.name
+              const currentOrg = vm.$store.getters.currentOrg
+              return currentOrg['is_root'] ? row.org_name : currentOrg.name
             }
           },
-          type_display: {
+          type: {
             formatter: DetailFormatter,
             formatterArgs: {
+              drawer: true,
               permissions: 'tickets.view_ticketflow',
-              route: 'FlowDetail'
+              getRoute: ({ row }) => {
+                this.$route.params.id = row.id
+                return {
+                  name: 'FlowDetail',
+                  params: {
+                    id: row.id
+                  }
+                }
+              },
+              getDrawerTitle: ({ row }) => {
+                return row.type.label
+              },
+              getTitle: function({ row }) {
+                return row.type.label
+              }
             }
           },
           actions: {
@@ -45,14 +66,8 @@ export default {
             formatterArgs: {
               hasClone: false,
               hasDelete: false,
-              onClone: ({ row }) => {
-                vm.$router.push({ name: 'TicketFlowUpdate', query: { type: row.type, clone_from: row.id }})
-              },
               canUpdate: () => {
                 return vm.$hasPerm('tickets.change_ticketflow')
-              },
-              onUpdate: ({ row }) => {
-                vm.$router.push({ name: 'TicketFlowUpdate', params: { id: row.id }})
               }
             }
           }
@@ -60,14 +75,9 @@ export default {
       },
       headerActions: {
         hasLeftActions: false,
-        hasRightActions: false,
         hasSearch: false
       }
     }
   }
 }
 </script>
-
-<style>
-
-</style>

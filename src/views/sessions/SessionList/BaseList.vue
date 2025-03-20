@@ -1,11 +1,16 @@
 <template>
-  <ListTable :table-config="tableConfig" :header-actions="headerActions" />
+  <ListTable
+    :detail-drawer="detailDrawer"
+    :header-actions="headerActions"
+    :table-config="tableConfig"
+  />
 </template>
 
 <script type="text/jsx">
-import ListTable from '@/components/ListTable'
-import { timeOffset, getDaysAgo, getDaysFuture } from '@/utils/common'
-import { ActionsFormatter } from '@/components/TableFormatters'
+import { DrawerListTable as ListTable } from '@/components'
+import { timeOffset } from '@/utils/time'
+import { ActionsFormatter, ChoicesFormatter, DetailFormatter } from '@/components/Table/TableFormatters'
+
 export default {
   name: 'BaseList',
   components: {
@@ -19,90 +24,136 @@ export default {
     extraActions: {
       type: Array,
       default: () => []
+    },
+    columnsShow: {
+      type: Object,
+      default: () => {
+        return {
+          min: ['id', 'actions'],
+          default: [
+            'id', 'user', 'asset', 'account', 'protocol',
+            'date_start', 'actions'
+          ]
+        }
+      }
+    },
+    columnsMeta: {
+      type: Object,
+      default: () => {}
+    },
+    columnsExclude: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
-    const now = new Date()
-    const dateFrom = getDaysAgo(7, now).toISOString()
-    const dateTo = getDaysFuture(1, now).toISOString()
     return {
+      detailDrawer: () => import('../SessionDetail/index.vue'),
       tableConfig: {
         url: this.url,
-        columns: [
-          'index', 'user', 'asset', 'system_user', 'remote_addr', 'protocol', 'login_from',
-          'command_amount', 'date_start', 'date_end', 'duration',
-          'terminal_display', 'org_name', 'actions'
-        ],
-        columnsShow: {
-          min: ['index', 'actions'],
-          default: [
-            'index', 'user', 'asset', 'system_user', 'remote_addr', 'protocol', 'login_from',
-            'command_amount', 'date_start', 'duration', 'terminal_display', 'actions'
-          ]
-        },
+        columnsExclude: ['terminal', ...this.columnsExclude],
+        columnsShow: this.columnsShow,
         columnsMeta: {
-          index: {
-            prop: 'index',
-            label: this.$t('sessions.id'),
+          id: {
+            prop: 'id',
+            label: this.$t('Number'),
             align: 'center',
-            width: '40px',
-            formatter: function(row, column, cellValue, index) {
-              const label = index + 1
-              const route = { to: { name: 'SessionDetail', params: { id: row.id }}}
-              return <router-link {...{ attrs: route }} class='link'>{ label }</router-link>
+            formatter: DetailFormatter,
+            formatterArgs: {
+              drawer: true,
+              can: this.$hasPerm('assets.view_asset'),
+              getTitle: ({ row, col, cellValue, index }) => { return index + 1 },
+              getDrawerTitle: ({ row }) => {
+                return row.id
+              },
+              getRoute: ({ row }) => {
+                return {
+                  name: 'SessionDetail',
+                  params: { id: row.id }
+                }
+              }
             }
           },
           user: {
-            showOverflowTooltip: true
+            formatter: DetailFormatter,
+            formatterArgs: {
+              drawer: true,
+              getTitle: ({ row }) => { return row.user },
+              getRoute: ({ row }) => {
+                return {
+                  name: 'UserDetail',
+                  params: {
+                    id: row.user_id
+                  }
+                }
+              }
+            }
+          },
+          can_join: {
+            formatterArgs: {
+              showFalse: false
+            }
+          },
+          can_replay: {
+            formatterArgs: {
+              showFalse: false
+            }
+          },
+          can_terminate: {
+            formatterArgs: {
+              showFalse: false
+            }
+          },
+          has_command: {
+            formatterArgs: {
+              showFalse: false
+            }
+          },
+          is_finished: {
+            formatterArgs: {
+              showFalse: false
+            }
+          },
+          has_replay: {
+            formatterArgs: {
+              showFalse: false
+            }
           },
           asset: {
-            label: this.$t('sessions.target'),
-            showOverflowTooltip: true
-          },
-          command_amount: {
-            label: this.$t('sessions.command'),
-            width: '90px'
-          },
-          system_user: {
-            showOverflowTooltip: true,
-            width: '100px'
-          },
-          login_from: {
-            label: this.$t('sessions.loginFrom'),
-            width: '115px',
-            showOverflowTooltip: true
-          },
-          remote_addr: {
-            width: '140px'
+            label: this.$t('Target'),
+            formatter: DetailFormatter,
+            formatterArgs: {
+              drawer: true,
+              can: this.$hasPerm('assets.view_asset'),
+              getTitle: ({ row }) => row.asset,
+              getRoute: ({ row }) => ({
+                name: 'AssetDetail',
+                params: { id: row.asset_id },
+                query: { tab: 'Basic' }
+              })
+            }
           },
           protocol: {
-            label: this.$t('sessions.protocol'),
-            width: '80px',
             sortable: false,
             formatter: null
           },
-          date_start: {
-            showOverflowTooltip: true,
-            width: '100px'
-          },
-          date_end: {
-            showOverflowTooltip: true,
-            width: '100px'
-          },
           duration: {
-            label: this.$t('sessions.duration'),
+            label: this.$t('Duration'),
             formatter: function(row) {
               return timeOffset(row.date_start, row.date_end)
-            },
-            width: '80px'
+            }
           },
-          terminal_display: {
-            showOverflowTooltip: true
+          is_locked: {
+            label: this.$t('IsLocked'),
+            formatter: ChoicesFormatter,
+            formatterArgs: {
+              showFalse: true
+            }
           },
           actions: {
             prop: 'actions',
-            label: this.$t('common.Actions'),
-            width: '160px',
+            label: this.$t('Actions'),
+            width: this.dynamicActionWidth,
             formatter: ActionsFormatter,
             formatterArgs: {
               hasEdit: false,
@@ -111,34 +162,34 @@ export default {
               hasUpdate: false,
               extraActions: this.extraActions
             }
-          }
-        },
-        extraQuery: {
-          date_to: dateTo,
-          date_from: dateFrom
+          },
+          ...this.columnsMeta
         }
       },
       headerActions: {
         hasLeftActions: false,
         hasImport: false,
         hasDatePicker: true,
-        datePicker: {
-          dateEnd: dateTo,
-          dateStart: dateFrom
-        },
         searchConfig: {
-          getUrlQuery: false
+          getUrlQuery: false,
+          exclude: ['is_finished']
         }
       }
     }
   },
-  methods: {
+  computed: {
+    dynamicActionWidth() {
+      if (this.$i18n.locale === 'pt-br') {
+        return '160px'
+      }
+      return '130px'
+    }
   }
 }
 </script>
 
 <style scoped>
-  .link {
-    color: var(--color-info);
-  }
+.link {
+  color: var(--color-info);
+}
 </style>

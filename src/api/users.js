@@ -12,7 +12,6 @@ export function getProfile(token) {
   return request({
     url: '/api/v1/users/profile/',
     method: 'get'
-    // params: { token }
   })
 }
 
@@ -64,10 +63,6 @@ export function logout() {
     url: '/vue-admin-template/user/logout',
     method: 'post'
   })
-}
-
-export function refreshSessionIdAge() {
-  return getProfile()
 }
 
 export default {

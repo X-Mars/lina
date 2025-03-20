@@ -1,13 +1,14 @@
 import Layout from '@/layout'
 import i18n from '@/i18n/i18n'
+import empty from '@/layout/empty.vue'
 
 export default {
   path: '/profile',
-  redirect: '/profile/info',
+  redirect: '/profile/index',
   component: Layout,
   meta: {
-    title: i18n.t('route.UserProfile'),
-    icon: 'gear',
+    title: i18n.t('PersonalSettings'),
+    icon: 'personal',
     view: 'profile',
     type: 'view',
     showNavSwitcher: false,
@@ -16,54 +17,100 @@ export default {
   },
   children: [
     {
-      path: '/profile/info',
-      name: 'ProfileInfo',
-      component: () => import('@/views/profile/ProfileInfo'),
+      path: '/profile/index',
+      name: 'Profile',
+      component: () => import('@/views/profile/index'),
       meta: {
-        title: i18n.t('users.AccountInformation'),
-        icon: 'adjust',
+        title: i18n.t('YourProfile'),
+        icon: 'attestation',
         permissions: []
       }
     },
     {
-      path: '/profile/setting',
-      name: 'ProfileSetting',
-      component: () => import('@/views/profile/ProfileUpdate/index'),
+      path: '/profile/password-and-ssh-key',
+      component: empty,
       meta: {
-        title: i18n.t('users.Profile'),
-        icon: 'user-circle',
-        permissions: []
+        icon: 'personal'
+      },
+      children: [
+        {
+          path: '',
+          component: () => import('@/views/profile/PasswordAndSSHKey/index'),
+          name: 'SSHKeyList',
+          icon: 'key',
+          meta: { title: i18n.t('PasswordAndSSHKey'), permissions: ['authentication.view_sshkey'] }
+        },
+        {
+          path: 'create',
+          component: () => import('@/views/profile/PasswordAndSSHKey/SSHKey/SSHKeyCreateUpdate.vue'),
+          name: 'SSHKeyCreate',
+          hidden: true,
+          meta: {
+            title: i18n.t('SSHKey'),
+            permissions: ['authentication.add_sshkey']
+          }
+        },
+        {
+          path: ':id/update',
+          component: () => import('@/views/profile/PasswordAndSSHKey/SSHKey/SSHKeyCreateUpdate.vue'),
+          name: 'SSHKeyUpdate',
+          hidden: true,
+          meta: {
+            title: i18n.t('SSHKey'),
+            permissions: ['authentication.change_sshkey']
+          }
+        }
+      ]
+    },
+    {
+      path: '/profile/passkeys',
+      name: 'Passkey',
+      component: () => import('@/views/profile/PassKey'),
+      meta: {
+        title: 'Passkeys',
+        icon: 'passkey',
+        hidden: ({ settings }) => !settings['AUTH_PASSKEY'],
+        permissions: ['authentication.view_passkey']
       }
     },
     {
-      path: '/profile/improvement',
-      component: () => import('@/views/profile/ProfileImprovement'),
-      name: 'ProfileImprovement',
-      hidden: true,
-      meta: { title: i18n.t('route.PersonalInformationImprovement'), permissions: [] }
+      path: '/profile/access-keys',
+      component: empty,
+      meta: {
+        icon: 'key'
+      },
+      redirect: '',
+      children: [
+        {
+          path: '',
+          component: () => import('@/views/profile/AccessKey/index'),
+          name: 'AccessKey',
+          icon: 'key',
+          meta: { title: i18n.t('AccessKey'), permissions: ['authentication.view_accesskey'] }
+        },
+        {
+          path: ':id/update',
+          component: () => import('@/views/profile/AccessKey/CreateUpdate'),
+          name: 'AccessKeyCreateUpdate',
+          hidden: true,
+          meta: {
+            title: i18n.t('AccessKey'),
+            permissions: ['authentication.change_accesskey'],
+            activeMenu: '/profile/access-keys'
+          }
+        }
+      ]
     },
     {
-      path: '/profile/key',
-      component: () => import('@/views/profile/ApiKey'),
-      name: 'ApiKey',
+      path: '/profile/temp-token',
+      component: () => import('@/views/profile/TempToken'),
+      name: 'TempToken',
       meta: {
-        title: i18n.t('common.nav.APIKey'),
-        icon: 'key',
-        permissions: ['authentication.view_accesskey'],
-        resource: 'accesskey',
-        app: 'authentication'
-      }
-    },
-    {
-      path: '/profile/temp-password',
-      component: () => import('@/views/profile/TempPassword'),
-      name: 'TempPassword',
-      meta: {
-        title: i18n.t('common.nav.TempPassword'),
+        title: i18n.t('TempToken'),
         icon: 'magic',
         hidden: ({ settings }) => !settings['AUTH_TEMP_TOKEN'],
         permissions: ['authentication.view_temptoken'],
-        activeMenu: '/profile/temp-password'
+        activeMenu: '/profile/temp-token'
       }
     },
     {
@@ -71,10 +118,27 @@ export default {
       component: () => import('@/views/profile/ConnectionToken'),
       name: 'ConnectionToken',
       meta: {
-        title: i18n.t('common.nav.ConnectionToken'),
-        icon: 'map-pin',
+        title: i18n.t('ConnectionToken'),
+        icon: 'token',
         permissions: ['authentication.view_connectiontoken']
       }
+    },
+    {
+      path: '/profile/preferences',
+      name: 'Preferences',
+      component: () => import('@/views/profile/Preferences/index'),
+      meta: {
+        title: i18n.t('Preferences'),
+        icon: 'preference',
+        permissions: []
+      }
+    },
+    {
+      path: '/profile/improvement',
+      component: () => import('@/views/profile/Improvement'),
+      name: 'Improvement',
+      hidden: true,
+      meta: { title: i18n.t('PersonalInformationImprovement'), permissions: [] }
     }
   ]
 }

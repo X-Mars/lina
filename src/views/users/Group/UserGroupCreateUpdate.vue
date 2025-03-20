@@ -4,6 +4,7 @@
 
 <script>
 import { GenericCreateUpdatePage } from '@/layout/components'
+
 export default {
   components: {
     GenericCreateUpdatePage
@@ -16,28 +17,24 @@ export default {
         },
         url: '/api/v1/users/groups/',
         fields: [
-          [this.$t('common.Basic'), ['name', 'users', 'comment']]
+          [this.$t('Basic'), ['name', 'users']],
+          [this.$t('Other'), ['comment']]
         ],
         fieldsMeta: {
           users: {
             el: {
+              url: '/api/v1/users/users/?fields_size=mini&order=name',
               ajax: {
-                url: '/api/v1/users/users/?fields_size=mini&order=name',
                 transformOption: (item) => {
                   return { label: item.name + '(' + item.username + ')', value: item.id }
                 }
-              }
+              },
+              resource: this.$t('User')
             }
           }
         }
       }
     }
-  },
-  methods: {
   }
 }
 </script>
-
-<style lang="less" scoped>
-
-</style>

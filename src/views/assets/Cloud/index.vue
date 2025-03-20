@@ -1,5 +1,5 @@
 <template>
-  <TabPage :active-menu.sync="config.activeMenu" :submenu="config.submenu" />
+  <TabPage :active-menu.sync="config.activeMenu" v-bind="config" />
 </template>
 
 <script>
@@ -13,27 +13,26 @@ export default {
   data() {
     return {
       config: {
-        activeMenu: 'SyncInstanceTaskList',
+        activeMenu: 'CloudAccountList',
         submenu: [
           {
-            title: this.$t('xpack.Cloud.SyncInstanceTaskList'),
-            name: 'SyncInstanceTaskList',
-            hidden: () => !this.$hasPerm('xpack.view_syncinstancetask'),
-            component: () => import('@/views/assets/Cloud/SyncInstanceTask/SyncInstanceTaskList.vue')
-          },
-          {
-            title: this.$t('xpack.Cloud.AccountList'),
-            name: 'AccountList',
+            title: this.$t('CloudAccountList'),
+            name: 'CloudAccountList',
             hidden: () => !this.$hasPerm('xpack.view_account'),
             component: () => import('@/views/assets/Cloud/Account/AccountList.vue')
+          },
+          {
+            title: this.$t('SyncStrategy'),
+            name: 'StrategyList',
+            hidden: () => !this.$hasPerm('xpack.view_strategy'),
+            component: () => import('@/views/assets/Cloud/Strategy/StrategyList.vue')
           }
-        ]
+        ],
+        actions: {
+          deleteSuccessRoute: 'AssetList'
+        }
       }
     }
   }
 }
 </script>
-
-<style scoped>
-
-</style>

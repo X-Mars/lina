@@ -1,14 +1,14 @@
 <template>
   <GenericCreateUpdatePage
-    v-bind="$data"
     :create-success-next-route="successUrl"
     :update-success-next-route="successUrl"
-    :after-get-form-value="afterGetFormValue"
+    v-bind="$data"
   />
 </template>
 
 <script>
 import { GenericCreateUpdatePage } from '@/layout/components'
+
 export default {
   name: 'EndpointRuleCreateUpdate',
   components: {
@@ -17,10 +17,14 @@ export default {
   data() {
     return {
       url: '/api/v1/terminal/endpoint-rules/',
+      initial: {
+        ip_group: ['*']
+      },
       successUrl: { name: 'TerminalSetting', params: { activeMenu: 'EndpointRuleList' }},
       fields: [
-        [this.$t('common.Basic'), ['name', 'ip_group', 'endpoint', 'priority']],
-        [this.$t('common.Other'), ['comment']]
+        [this.$t('Basic'), ['name', 'priority']],
+        [this.$t('Endpoint'), ['ip_group', 'endpoint']],
+        [this.$t('Other'), ['is_active', 'comment']]
       ],
       fieldsMeta: {
         endpoint: {
@@ -38,14 +42,10 @@ export default {
       },
       hasDetailInMsg: false,
       cleanFormValue(value) {
-        if (!Array.isArray(value.ip_group)) {
-          value.ip_group = value.ip_group ? value.ip_group.split(',') : []
+        if (Array.isArray(value.ip_group)) {
+          value.ip_group = value.ip_group.filter(Boolean)
         }
         return value
-      },
-      afterGetFormValue(formValue) {
-        formValue.ip_group = formValue.ip_group.toString()
-        return formValue
       }
     }
   }

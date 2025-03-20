@@ -1,64 +1,67 @@
 <template>
-  <div :class="{'has-logo': showLogo, 'show-orgs': showOrgs}">
+  <div :class="{'has-logo': showLogo, 'show-orgs': showOrgs, 'collapsed': isCollapse}" class="left-side-wrapper">
     <div class="nav-header">
-      <div class="nav-logo">
-        <Logo v-if="showLogo" :collapse="isCollapse" />
-      </div>
       <div class="active-mobile">
-        <ViewSwitcher mode="vertical" class="mobile-view-switch" />
         <Organization v-if="$hasLicense()" class="organization" />
       </div>
-      <div class="nav-title" :class="{'collapsed': isCollapse}">
-        <svg-icon
-          v-if="isRouteMeta.view === 'settings'"
-          icon-class="setting-fill"
-          style="margin-right: 0;"
-        />
-        <i
-          v-else
-          class="fa"
-          :class="isRouteMeta.icon"
-        />
-        <span
-          v-show="!isCollapse"
-          style="margin-left: 3px;"
-        >{{ isRouteMeta.title || '' }}</span>
+      <div class="nav-title">
+        <span :class="switchViewOtherClasses" class="switch-view active-switch-view">
+          <el-popover
+            :open-delay="200"
+            placement="right-start"
+            trigger="hover"
+          >
+            <span slot="reference" style="width: 100%">
+              <el-tooltip v-show="!isCollapse" :content="isRouteMeta.title" :open-delay="1000" placement="bottom" effect="dark" class="view-title">
+                <span class="text-overflow">{{ isRouteMeta.title || '' }}</span>
+              </el-tooltip>
+              <span class="icon-zone">
+                <svg-icon class="icon" icon-class="switch" />
+              </span>
+            </span>
+            <ViewSwitcher mode="vertical" @view-change="handleViewChange" />
+          </el-popover>
+        </span>
       </div>
     </div>
-    <el-scrollbar class="menu-wrap" wrap-class="scrollbar-wrapper">
+    <div class="menu-wrap el-scrollbar">
       <el-menu
-        class="left-menu"
-        :default-active="activeMenu"
-        :collapse="isCollapse"
+        :active-text-color="variables['menuActiveText']"
         :background-color="variables['menuBg']"
+        :collapse="isCollapse"
+        :collapse-transition="false"
+        :default-active="activeMenu"
+        :default-openeds="defaultOpensMenu"
         :text-color="variables['menuText']"
         :text-weigth="variables['menuTextWeight']"
-        :active-text-color="variables['menuActiveText']"
-        :unique-opened="true"
-        :collapse-transition="false"
+        :unique-opened="false"
+        class="left-menu"
         mode="vertical"
       >
         <sidebar-item
           v-for="route in currentViewRoute.children"
           :key="route.path"
-          :item="route"
           :base-path="route.path"
+          :collapse="isCollapse"
+          :item="route"
         />
       </el-menu>
-    </el-scrollbar>
+    </div>
     <div class="nav-footer">
       <div class="toggle-bar">
         <Hamburger :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
       </div>
+    </div>
+    <div :class="{'is-show': viewShown}" class="mobile-menu" @click="viewShown = false">
+      <ViewSwitcher :mode="'vertical'" />
     </div>
   </div>
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
-import Logo from './Logo'
 import SidebarItem from './SidebarItem'
-import Hamburger from '@/components/Hamburger'
+import Hamburger from '@/components/Widgets/Hamburger'
 import ViewSwitcher from '../NavHeader/ViewSwitcher'
 import Organization from '../NavHeader/Organization'
 import variables from '@/styles/variables.scss'
@@ -66,16 +69,25 @@ import variables from '@/styles/variables.scss'
 export default {
   components: {
     SidebarItem,
-    Logo,
     Hamburger,
     ViewSwitcher,
     Organization
+  },
+  data() {
+    return {
+      viewShown: false,
+      switchViewOtherClasses: '',
+      defaultMenu: []
+    }
   },
   computed: {
     ...mapGetters([
       'currentViewRoute',
       'sidebar'
     ]),
+    defaultOpensMenu() {
+      return []
+    },
     activeMenu() {
       const route = this.$route
       const { meta, path } = route
@@ -115,88 +127,209 @@ export default {
       return this.currentViewRoute.meta || {}
     }
   },
+  mounted() {
+  },
   methods: {
     toggleSideBar() {
       this.$store.dispatch('app/toggleSideBar')
+    },
+    toggleSwitch() {
+      this.viewShown = true
+    },
+    handleViewChange() {
+      // 此处不使用 nextTick 的原因可能是由于子组件中切换 tag 需要触发异步的 dispatch
+      setTimeout(() => {
+        // this.setLeastMenuOpen()
+      }, 500)
+    },
+    setLeastMenuOpen() {
+      const hasOpened = document.querySelector('.el-submenu-sidebar.submenu-item.el-submenu.is-opened')
+      if (hasOpened) {
+        return
+      }
+      const el = document.querySelector('.el-submenu__title')
+      if (el) {
+        el.click()
+      }
     }
   }
 }
 </script>
 <style lang="scss" scoped>
-  @import "~@/styles/variables.scss";
+@import "~@/styles/variables.scss";
+
+$mobileHeight: 40px;
+$origin-color: #ffffff;
+$hover-bg-color: #e6e6e6;
+$hover-text-color: #606266;
+$hover-border-color: #d2d2d2;
+
+.left-side-wrapper {
   .nav-header {
-    overflow: hidden;
-    background: $subMenuBg url('~@/assets/img/header-profile.png') no-repeat center center;
-  }
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
 
-  .nav-logo {
-    height: 55px;
-  }
+    .active-mobile {
+      display: none;
 
-  .nav-title {
-    box-sizing: border-box;
-    margin: 17px 0 17px 20px;
-    font-size: 15px;
-    font-weight: 460;
-    color: #fff;
-    overflow: hidden;
-    white-space: nowrap;
-    cursor: pointer;
-  }
+      ::v-deep .organization {
+        height: $mobileHeight;
+        padding-left: 20px;
+        background: var(--color-primary-dark-1);
+        color: $origin-color;
 
-  .collapsed {
-    text-align: left;
-  }
+        .el-input--prefix {
+          display: flex;
+          align-items: center;
+          height: 40px;
+          line-height: 40px;
+        }
 
-  .organizations {
-    height: 55px;
+        .svg-icon {
+          color: $origin-color !important;
+          margin-right: 0 !important;
+        }
+      }
+
+      & ::v-deep .title-label {
+        color: $origin-color !important;
+      }
+
+      .mobile-view-switch {
+        &::v-deep .el-menu-item.is-active {
+          color: var(--menu-text-active) !important;
+
+          .svg-icon {
+            color: var(--menu-text-active) !important;
+          }
+        }
+      }
+    }
+
+    .nav-title {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      height: 50px;
+      font-size: 16px;
+      font-weight: 500;
+      overflow: hidden;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: var(--color-text-primary);
+      background-color: var(--menu-bg);
+      border-bottom: 1px solid var(--color-border);
+
+      .switch-view {
+        width: 100%;
+        padding: 5px;
+
+        ::v-deep .el-popover__reference {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 0 10px 0 15px;
+
+          .view-title {
+            width: calc(100% - 10px);
+            display: inline-block
+          }
+
+          .icon-zone {
+            display: flex;
+            align-items: center;
+            padding: 6px;
+            box-sizing: border-box;
+
+            .icon {
+              width: 1.05em;
+              height: 1.05em;
+              margin-right: 0 !important;
+            }
+
+            &:hover {
+              color: $hover-text-color;
+              border-color: $hover-border-color;
+              background-color: $hover-bg-color;
+              border-radius: 4px;
+            }
+          }
+        }
+      }
+    }
   }
 
   .nav-footer {
-    display: block;
-    width: 100%;
-    height: 40px;
+    display: flex;
+    justify-content: flex-start;
+    border-top: 1px solid rgba(31, 35, 41, 0.15);
     background-color: $subMenuBg;
 
     .toggle-bar {
-      width: 55px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 54px;
       height: 40px;
-      bottom: 0;
-      left: 0;
-      top: auto;
       border: 0;
-      z-index: 1000;
-      position: relative;
       cursor: pointer;
-    }
 
-    .toggle-bar:hover {
-      background-color: $subMenuHover;
-    }
+      ::v-deep .hamburger-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        padding: 0 !important;
 
-    .hamburger-container {
-      left: 2px;
-      top: 10px;
-      position: absolute;
+        .svg-icon {
+          margin-right: 0 !important;
+        }
+      }
+
+      &:hover {
+        color: $hover-text-color;
+        border-color: $hover-border-color;
+        background-color: $hover-bg-color;
+      }
     }
   }
-  .active-mobile {
+
+  .is-show {
+    display: block !important;;
+  }
+
+  .mobile-menu {
     display: none;
-    &>>> .organization {
-      padding-left: 8px;
-      background: transparent;
-      color: #fff;
-    }
-    &>>> .menu-main {
-      margin-left: -10px;
-    }
-    &>>> .title-label {
-      color: white !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding-top: 10px;
+    background: #fff;
+    z-index: 100;
+  }
+
+  &.collapsed .nav-title .switch-view {
+    ::v-deep .el-popover__reference {
+      .icon-zone {
+        margin-right: 0;
+      }
+
+      .switch-view .icon {
+        margin-left: 0;
+      }
     }
   }
-  @media screen and (max-width: 992px) {
-    .active-mobile {
-      display: block;
-    }
+}
+
+@media screen and (max-width: 992px) {
+  ::v-deep .active-mobile {
+    display: block !important;
   }
+}
 </style>

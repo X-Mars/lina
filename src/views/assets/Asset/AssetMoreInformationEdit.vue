@@ -1,5 +1,5 @@
 <template>
-  <GenericCreateUpdatePage v-bind="$data" :perform-submit="performSubmit" />
+  <GenericCreateUpdatePage :perform-submit="performSubmit" v-bind="$data" />
 </template>
 
 <script>
@@ -11,91 +11,22 @@ export default {
     GenericCreateUpdatePage
   },
   data() {
-    const nodesInitial = []
-    if (this.$route.query['node']) {
-      nodesInitial.push(this.$route.query.node)
-    }
     return {
-      initial: {
-        is_active: true,
-        platform: 'Linux',
-        protocols: ['ssh/22'],
-        nodes: nodesInitial
-      },
+      initial: {},
       fields: [
-        [this.$t('common.Basic'), [
-          'hostname', 'ip', 'platform', 'number'
-        ]],
-        [this.$t('assets.Hardware'), [
-          'vendor', 'model', 'sn', 'cpu_model', 'cpu_count', 'cpu_cores',
-          'cpu_vcpus', 'memory', 'disk_total'
-        ]],
-        [this.$t('assets.Os'), ['os', 'os_version', 'os_arch']]
+        [this.$t('Basic'), ['name', 'address']],
+        [this.$t('Hardware'), ['gathered_info']]
       ],
       fieldsMeta: {
-        platform: {
-          el: {
-            multiple: false,
-            ajax: {
-              url: '/api/v1/assets/platforms/',
-              transformOption: (item) => {
-                return { label: `${item.name}`, value: item.name }
-              }
-            }
-          }
-        },
-        vendor: {
-          el: {
-            type: `input`
-          }
-        },
-        model: {
-          el: {
-            type: `input`
-          }
-        },
-        cpu_model: {
-          el: {
-            type: `input`
-          }
-        },
-        memory: {
-          el: {
-            type: `input`
-          }
-        },
-        disk_info: {
-          el: {
-            type: `input`
-          }
-        },
-        disk_total: {
-          el: {
-            type: `input`
-          }
-        },
-        sn: {
-          el: {
-            type: `input`
-          }
-        },
-        os: {
-          el: {
-            type: `input`
-          }
-        },
-        os_version: {
-          el: {
-            type: `input`
-          }
-        },
-        os_arch: {
-          el: {
-            type: `input`
-          }
+        gathered_info: {
+          fields: [
+            'vendor', 'model', 'sn', 'cpu_model', 'cpu_count',
+            'cpu_cores', 'cpu_vcpus', 'memory', 'disk_total',
+            'distribution', 'distribution_version', 'arch'
+          ]
         }
       },
-      url: '/api/v1/assets/assets/',
+      url: '/api/v1/assets/hosts/',
       updateSuccessNextRoute: { name: 'AssetList' },
       createSuccessNextRoute: { name: 'AssetList' },
       objectDetailRoute: { name: 'AssetDetail' }
