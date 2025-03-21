@@ -1,117 +1,103 @@
 <template>
-  <div>
-    <GenericTreeListPage :table-config="tableConfig" :header-actions="headerActions" :tree-setting="treeSetting" />
+  <Page :help-tip="helpMsg" v-bind="$attrs">
+    <AssetTreeTable
+      ref="AssetTreeTable"
+      :header-actions="headerActions"
+      :table-config="tableConfig"
+      :tree-setting="treeSetting"
+      :quick-filters="quickFilter"
+    />
     <PermBulkUpdateDialog
       :visible.sync="updateSelectedDialogSetting.visible"
       v-bind="updateSelectedDialogSetting"
+      @update="handlePermBulkUpdate"
     />
-  </div>
+  </Page>
 </template>
 
 <script>
-import GenericTreeListPage from '@/layout/components/GenericTreeListPage'
-import { DetailFormatter } from '@/components/TableFormatters'
-import PermBulkUpdateDialog from '@/views/perms/components/PermBulkUpdateDialog'
+import Page from '@/layout/components/Page'
+import AssetTreeTable from '@/components/Apps/AssetTreeTable'
+import PermBulkUpdateDialog from './components/PermBulkUpdateDialog'
 import { mapGetters } from 'vuex'
+import { AssetPermissionListPageSearchConfigOptions, AssetPermissionTableMeta } from '../const.js'
 
 export default {
   components: {
-    GenericTreeListPage,
+    Page,
+    AssetTreeTable,
     PermBulkUpdateDialog
   },
   data() {
-    const vm = this
     return {
+      helpMsg: this.$t('AssetPermissionHelpMsg'),
+      quickFilter: [
+        {
+          label: this.$t('QuickFilter'),
+          options: [
+            {
+              label: this.$t('Invalid'),
+              filter: {
+                is_valid: false
+              }
+            },
+            {
+              label: this.$t('Valid'),
+              filter: {
+                is_valid: true
+              }
+            },
+            {
+              label: this.$t('Expired'),
+              filter: {
+                is_expired: true
+              }
+            },
+            {
+              label: this.$t('Disabled'),
+              filter: {
+                is_active: false
+              }
+            },
+            {
+              label: this.$t('NoResource'),
+              filter: {
+                is_no_resource: true
+              }
+            }
+          ]
+        }
+      ],
       treeSetting: {
         showMenu: false,
-        showRefresh: true,
         showAssets: true,
+        notShowBuiltinTree: true,
         url: '/api/v1/perms/asset-permissions/',
         nodeUrl: '/api/v1/perms/asset-permissions/',
-        treeUrl: '/api/v1/assets/nodes/children/tree/?assets=1'
+        treeUrl: '/api/v1/assets/nodes/children/tree/?assets=1&asset_amount=0',
+        edit: {
+          drag: {
+            isMove: false
+          }
+        }
       },
       tableConfig: {
         url: '/api/v1/perms/asset-permissions/',
         hasTree: true,
+        columnsExtra: ['action'],
         columns: [
-          'name',
-          'users_amount', 'user_groups_amount', 'assets_amount', 'nodes_amount', 'system_users_amount',
-          'date_expired', 'is_valid', 'is_expired', 'is_active', 'from_ticket',
-          'created_by', 'date_created', 'comment', 'org_name', 'actions'
+          'name', 'users_amount', 'user_groups_amount', 'assets_amount', 'nodes_amount',
+          'accounts', 'labels', 'is_valid', 'is_expired', 'from_ticket', 'is_active', 'actions'
         ],
         columnsShow: {
           min: ['name', 'actions'],
           default: [
-            'name', 'users_amount', 'user_groups_amount', 'assets_amount', 'nodes_amount', 'system_users_amount',
-            'is_valid', 'actions'
+            'name', 'users_amount', 'user_groups_amount', 'assets_amount',
+            'nodes_amount', 'accounts', 'is_valid', 'actions'
           ]
         },
         columnsMeta: {
-          name: {
-            formatterArgs: {
-              routeQuery: {
-                activeTab: 'AssetPermissionDetail'
-              }
-            },
-            showOverflowTooltip: true
-          },
-          users_amount: {
-            label: this.$t('perms.User'),
-            width: '60px',
-            formatter: DetailFormatter,
-            formatterArgs: {
-              routeQuery: {
-                activeTab: 'AssetPermissionUser'
-              }
-            }
-          },
-          from_ticket: {
-            label: this.$t('perms.fromTicket'),
-            width: 100,
-            formatterArgs: {
-              showFalse: false
-            }
-          },
-          user_groups_amount: {
-            label: this.$t('perms.UserGroups'),
-            width: '100px',
-            formatter: DetailFormatter,
-            formatterArgs: {
-              routeQuery: {
-                activeTab: 'AssetPermissionUser'
-              }
-            }
-          },
-          assets_amount: {
-            label: this.$t('perms.Asset'),
-            width: '60px',
-            formatter: DetailFormatter,
-            formatterArgs: {
-              routeQuery: {
-                activeTab: 'AssetPermissionAsset'
-              }
-            }
-          },
-          nodes_amount: {
-            label: this.$t('perms.Node'),
-            width: '60px',
-            formatter: DetailFormatter,
-            formatterArgs: {
-              routeQuery: {
-                activeTab: 'AssetPermissionAsset'
-              }
-            }
-          },
-          system_users_amount: {
-            label: this.$t('perms.SystemUser'),
-            width: '100px',
-            formatter: DetailFormatter,
-            formatterArgs: {
-              routeQuery: {
-                activeTab: 'AssetPermissionAsset'
-              }
-            }
-          },
+          ...AssetPermissionTableMeta,
           actions: {
             formatterArgs: {
               updateRoute: 'AssetPermissionUpdate',
@@ -125,93 +111,17 @@ export default {
         }
       },
       headerActions: {
+        hasLabelSearch: true,
         hasBulkDelete: true,
-        createRoute() {
-          return {
-            name: 'AssetPermissionCreate',
-            query: this.$route.query
-          }
-        },
-        createInNewPage: true,
         searchConfig: {
           url: '',
-          options: [
-            { label: this.$t('common.Name'), value: 'name' },
-            {
-              label: this.$t('perms.isValid'), value: 'is_valid',
-              children: [
-                {
-                  value: '1',
-                  label: this.$t('common.Yes')
-                },
-                {
-                  value: '0',
-                  label: this.$t('common.No')
-                }
-              ]
-            },
-            {
-              label: this.$t('perms.fromTicket'), value: 'from_ticket',
-              children: [
-                {
-                  value: '1',
-                  label: this.$t('common.Yes')
-                },
-                {
-                  value: '0',
-                  label: this.$t('common.No')
-                }
-              ]
-            },
-            {
-              label: this.$t('perms.isEffective'), value: 'is_effective',
-              children: [
-                {
-                  value: '1',
-                  label: this.$t('common.Yes')
-                },
-                {
-                  value: '0',
-                  label: this.$t('common.No')
-                }
-              ]
-            },
-            { label: this.$t('common.Username'), value: 'username' },
-            { label: this.$t('perms.UserGroups'), value: 'user_group' },
-            { label: this.$t('perms.IP'), value: 'ip' },
-            { label: this.$t('perms.hostName'), value: 'hostname' },
-            { label: this.$t('perms.SystemUser'), value: 'system_user' },
-            {
-              label: this.$t('perms.Inherit'), value: 'all',
-              children: [
-                {
-                  value: '1',
-                  label: this.$t('perms.Include')
-                },
-                {
-                  value: '0',
-                  label: this.$t('perms.Exclude')
-                }
-              ]
-            }
-          ]
+          options: AssetPermissionListPageSearchConfigOptions
         },
-        hasBulkUpdate: false,
-        extraMoreActions: [
-          {
-            name: 'actionUpdateSelected',
-            title: this.$t('common.updateSelected'),
-            can: ({ selectedRows }) => {
-              return selectedRows.length > 0 &&
-                !vm.currentOrgIsRoot &&
-                vm.$hasPerm('perms.change_assetpermission')
-            },
-            callback: ({ selectedRows }) => {
-              vm.updateSelectedDialogSetting.selectedRows = selectedRows
-              vm.updateSelectedDialogSetting.visible = true
-            }
-          }
-        ]
+        hasBulkUpdate: true,
+        handleBulkUpdate: ({ selectedRows }) => {
+          this.updateSelectedDialogSetting.selectedRows = selectedRows
+          this.updateSelectedDialogSetting.visible = true
+        }
       },
       updateSelectedDialogSetting: {
         visible: false,
@@ -222,11 +132,16 @@ export default {
   computed: {
     ...mapGetters(['currentOrgIsRoot'])
   },
+  activated() {
+    setTimeout(() => {
+      this.$refs.AssetTreeTable.$refs.TreeList.reloadTable()
+    }, 500)
+  },
   methods: {
+    handlePermBulkUpdate() {
+      this.updateSelectedDialogSetting.visible = false
+      this.$refs.AssetTreeTable.$refs.TreeList.$refs?.ListTable?.reloadTable()
+    }
   }
 }
 </script>
-
-<style>
-
-</style>

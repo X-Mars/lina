@@ -1,149 +1,251 @@
 <template>
-  <div>
-    <GenericListTable :table-config="tableConfig" :header-actions="headerActions" />
-    <Dialog
-      v-if="dialogVisible"
-      :title="this.$t('assets.TestGatewayTestConnection')"
-      :visible.sync="dialogVisible"
-      width="40%"
-      top="35vh"
-      :show-confirm="false"
-      :show-cancel="false"
-      :destroy-on-close="true"
-    >
-      <el-row :gutter="20">
-        <el-col :md="4" :sm="24">
-          <div style="line-height: 34px">{{ $t('assets.SshPort') }}</div>
-        </el-col>
-        <el-col :md="14" :sm="24">
-          <el-input v-model="portInput" />
-          <span class="help-tips help-block">{{ $t('assets.TestGatewayHelpMessage') }}</span>
-        </el-col>
-        <el-col :md="4" :sm="24">
-          <el-button size="mini" type="primary" style="line-height:20px " :loading="buttonLoading" @click="dialogConfirm">{{ this.$t('common.Confirm') }}</el-button>
-        </el-col>
-      </el-row>
-    </Dialog>
-  </div>
-
+  <TwoCol>
+    <GenericListTable
+      ref="ListTable"
+      :create-drawer="createDrawer"
+      :detail-drawer="detailDrawer"
+      :header-actions="headerActions"
+      :resource="$tc('Gateway')"
+      :table-config="tableConfig"
+    />
+    <GatewayTestDialog
+      :cell="testConfig.cell"
+      :port="testConfig.port"
+      :visible.sync="testConfig.visible"
+    />
+    <AddGatewayDialog
+      v-if="addGatewaySetting.addGatewayDialogVisible"
+      :object="transObject"
+      :setting="addGatewaySetting"
+      @close="handleAddGatewayDialogClose"
+    />
+  </TwoCol>
 </template>
 
 <script>
-import GenericListTable from '@/layout/components/GenericListTable/index'
-import DisplayFormatter from '@/components/TableFormatters/DisplayFormatter'
-import Dialog from '@/components/Dialog'
+import { GenericListTable } from '@/layout/components'
+import GatewayTestDialog from '@/components/Apps/GatewayTestDialog'
+import { connectivityMeta } from '@/components/Apps/AccountListTable/const'
+import { ArrayFormatter, ChoicesFormatter, DetailFormatter, TagsFormatter } from '@/components/Table/TableFormatters'
+import AddGatewayDialog from '@/views/assets/Domain/components/AddGatewayDialog'
+import TwoCol from '@/layout/components/Page/TwoColPage.vue'
+
 export default {
   components: {
+    TwoCol,
     GenericListTable,
-    Dialog
+    GatewayTestDialog,
+    AddGatewayDialog
   },
   props: {
     object: {
       type: Object,
-      default: () => {}
+      default: () => {
+      }
     }
   },
   data() {
+    const vm = this
+
     return {
+      createDrawer: () => import('@/views/assets/Domain/DomainDetail/GatewayCreateUpdate.vue'),
+      detailDrawer: () => import('@/views/assets/Asset/AssetDetail'),
+      transObject: {},
+      testConfig: {
+        port: 0,
+        visible: false,
+        cell: ''
+      },
       tableConfig: {
-        url: `/api/v1/assets/gateways/?domain=${this.$route.params.id}`,
-        columns: ['name', 'ip', 'port', 'protocol', 'username', 'comment', 'actions'],
+        url: `/api/v1/assets/gateways/?domain=${this.object.id}`,
+        columnsExclude: [
+          'info', 'spec_info', 'auto_config'
+        ],
+        columnsShow: {
+          min: ['name', 'actions'],
+          default: [
+            'name', 'address',
+            'connectivity', 'actions'
+          ]
+        },
         columnsMeta: {
           name: {
-            sortable: 'custom',
-            formatter: DisplayFormatter
+            formatter: DetailFormatter,
+            formatterArgs: {
+              getRoute({ row }) {
+                return {
+                  name: 'AssetDetail',
+                  params: { id: row.id }
+                }
+              }
+            },
+            sortable: true
           },
-          ip: {
+          type: { formatter: ChoicesFormatter },
+          category: { formatter: ChoicesFormatter },
+          address: {
+            sortable: 'custom',
             width: '140px'
           },
-          port: {
-            width: '60px'
+          platform: {
+            width: '100px',
+            sortable: true
           },
-          protocol: {
-            sortable: 'custom',
-            width: '100px'
+          protocols: {
+            formatter: (row) => {
+              const data = row.protocols.map(p => <el-tag size='mini'>{p.name}/{p.port} </el-tag>)
+              return <span> {data} </span>
+            }
           },
+          nodes_display: {
+            formatter: ArrayFormatter
+          },
+          labels: {
+            formatter: TagsFormatter,
+            formatterArgs: {
+              getTags(cellValue) {
+                return cellValue.map(item => `${item.name}:${item.value}`)
+              }
+            }
+          },
+          connectivity: connectivityMeta,
           actions: {
             formatterArgs: {
-              updateRoute: 'GatewayUpdate',
-              performDelete: ({ row, col }) => {
+              updateRoute: {
+                name: 'GatewayUpdate',
+                query: { domain: this.object.id, platform_type: 'linux', 'category': 'host' }
+              },
+              onClone: ({ row }) => {
+                this.$refs.ListTable.onClone({ row: { ...row, payload: 'pam_asset_clone' }})
+              },
+              performDelete: ({ row }) => {
                 const id = row.id
                 const url = `/api/v1/assets/gateways/${id}/`
                 return this.$axios.delete(url)
               },
               extraActions: [
                 {
-                  name: 'TestConnection',
-                  can: this.$hasPerm('assets.test_gateway'),
-                  title: this.$t('assets.TestConnection'),
+                  name: 'RemoveGateWay',
+                  order: 10,
+                  can: this.$hasPerm('assets.test_assetconnectivity') && !this.$store.getters.currentOrgIsRoot,
+                  title: this.$t('Remove'),
                   callback: function(val) {
-                    this.dialogVisible = true
-                    if (!val.row.port) {
-                      return this.$message.error(this.$t('common.BadRequestErrorMsg'))
+                    this.removeGateway(val)
+                  }.bind(this)
+                },
+                {
+                  name: 'TestConnection',
+                  can: this.$hasPerm('assets.test_assetconnectivity') && !this.$store.getters.currentOrgIsRoot,
+                  title: this.$t('TestConnection'),
+                  callback: function(val) {
+                    vm.testConfig.visible = true
+                    const port = val.row.protocols.find(item => item.name === 'ssh').port
+                    if (!port) {
+                      return this.$message.error(this.$tc('BadRequestErrorMsg'))
                     } else {
-                      this.portInput = val.row.port
-                      this.cellValue = val.row.id
+                      vm.testConfig.port = port
+                      vm.testConfig.cell = val.row.id
                     }
                   }.bind(this)
                 }
-              ],
-              onClone: function({ row, col }) {
-                const cloneRoute = {
-                  name: 'GatewayCreate',
-                  query: {
-                    domain: this.object.id,
-                    clone_from: row.id
-                  }
-                }
-                this.$router.push(cloneRoute)
-              }.bind(this)
+              ]
             }
           }
-
         }
       },
       headerActions: {
         hasBulkUpdate: false,
         hasSearch: true,
-        createRoute: {
-          name: 'GatewayCreate',
-          query: {
-            domain: this.object.id
+        extraMoreActions: [
+          {
+            name: this.$t('RemoveSelected'),
+            title: this.$t('RemoveSelected'),
+            type: 'primary',
+            icon: 'fa fa-minus',
+            can({ selectedRows }) {
+              return selectedRows.length > 0
+            },
+            callback: function(rows) {
+              this.removeGateway(rows)
+            }.bind(this)
           }
+        ],
+        extraActions: [
+          {
+            name: 'GatewayAdd',
+            title: this.$t('Add'),
+            can: !this.$store.getters.currentOrgIsRoot,
+            callback: async() => {
+              // 由于修改成为了抽屉形式，导致传入到 AddGateway 组件中的 obj 任然为最初的数量，就会导致新增的 item 依然会出现可选的情况
+              // 此时修改为在打开 AddGateway 额外从 tableConfig.url 的接口中获取最新的 gateways 数目
+              try {
+                const res = await this.$axios.get(this.tableConfig.url)
+
+                if (res) {
+                  this.transObject = {
+                    ...this.object,
+                    gateways: res.map(item => {
+                      return {
+                        name: item.name,
+                        id: item.id
+                      }
+                    })
+                  }
+                }
+              } catch (err) {
+                throw new Error(err)
+              }
+
+              vm.$nextTick(() => {
+                this.addGatewaySetting.addGatewayDialogVisible = true
+              })
+            }
+          }
+        ],
+        onCreate: () => {
+          vm.$refs.ListTable.onCreate({ query: { domain: vm.object.id, platform_type: 'linux', category: 'host' }})
         }
       },
-      dialogVisible: false,
-      portInput: '',
-      cellValue: '',
-      buttonLoading: false
+      addGatewaySetting: {
+        addGatewayDialogVisible: false
+      }
     }
   },
   methods: {
-    dialogConfirm() {
-      this.buttonLoading = true
-
-      const port = parseInt(this.portInput)
-
-      if (isNaN(port)) {
-        this.buttonLoading = false
-        return this.$message.error(this.$t('common.TestPortErrorMsg'))
+    reloadTable() {
+      this.$refs.ListTable.$refs.ListTable.reloadTable()
+    },
+    removeGateway(rows) {
+      let patch_data
+      let msg
+      if (rows.hasOwnProperty('selectedRows')) {
+        patch_data = rows.selectedRows.map(row => {
+          return {
+            id: row.id,
+            domain: null
+          }
+        })
+        msg = patch_data.length + ' ' + this.$t('Rows')
+      } else {
+        patch_data = [{
+          id: rows.row.id,
+          domain: null
+        }]
+        msg = rows.row.name
       }
-      this.$axios.post(`/api/v1/assets/gateways/${this.cellValue}/test-connective/`, { port: port }).then(
-        res => {
-          return this.$message.success(this.$t('common.TestSuccessMsg'))
-        }
-      ).finally(() => {
-        this.portInput = ''
-        this.cellValue = ''
-        this.buttonLoading = false
-        this.dialogVisible = false
-      }
-      )
+      this.$confirm(this.$t('RemoveWarningMsg') + ' ' + msg + ' ?', {
+        type: 'warning'
+      }).then(() => {
+        this.$axios.patch(`/api/v1/assets/gateways/`, patch_data).then(() => {
+          this.reloadTable()
+          this.$message.success(this.$t('RemoveSuccessMsg'))
+        })
+      }).catch(() => {
+      })
+    },
+    handleAddGatewayDialogClose() {
+      this.reloadTable()
     }
   }
 }
 </script>
-
-<style>
-
-</style>

@@ -1,10 +1,16 @@
 <template>
-  <GenericListPage :table-config="tableConfig" :header-actions="headerActions" :help-message="notice" />
+  <GenericListPage
+    :create-drawer="createDrawer"
+    :detail-drawer="detailDrawer"
+    :header-actions="headerActions"
+    :help-tip="notice"
+    :table-config="tableConfig"
+  />
 </template>
 
 <script>
 import { GenericListPage } from '@/layout/components'
-import { DetailFormatter } from '@/components/TableFormatters'
+import AmountFormatter from '@/components/Table/TableFormatters/AmountFormatter.vue'
 
 export default {
   components: {
@@ -12,45 +18,62 @@ export default {
   },
   data() {
     return {
+      createDrawer: () => import('./DomainCreateUpdate.vue'),
+      detailDrawer: () => import('./DomainDetail/index.vue'),
       tableConfig: {
         url: '/api/v1/assets/domains/',
-        columns: [
-          'name', 'asset_count', 'application_count', 'gateway_count', 'date_created',
-          'comment', 'org_name', 'actions'
-        ],
+        columnsExclude: ['gateway'],
+        columnsExtra: ['gateways'],
+        columns: ['name', 'assets_amount', 'gateways', 'labels', 'comment', 'actions'],
         columnsShow: {
           min: ['name', 'actions'],
-          default: ['name', 'asset_count', 'application_count', 'gateway_count', 'comment', 'actions']
+          default: ['name', 'assets_amount', 'gateways', 'comment', 'actions']
         },
         columnsMeta: {
-          asset_count: {
-            label: this.$t('assets.Assets')
+          assets_amount: {
+            width: '160px',
+            formatter: AmountFormatter,
+            formatterArgs: {
+              async: true,
+              permissions: 'assets.view_asset',
+              getRoute({ row }) {
+                return {
+                  name: 'ZoneDetail',
+                  params: {
+                    id: row.id
+                  },
+                  query: {
+                    tab: 'AssetList'
+                  }
+                }
+              }
+            }
           },
-          application_count: {
-            label: this.$t('assets.Applications')
-          },
-          gateway_count: {
-            label: this.$t('assets.Gateway'),
-            formatter: DetailFormatter,
+          gateways: {
+            formatter: AmountFormatter,
             formatterArgs: {
               permissions: 'assets.view_gateway',
-              routeQuery: {
-                activeTab: 'GatewayList'
+              getRoute({ row }) {
+                return {
+                  name: 'ZoneDetail',
+                  params: {
+                    id: row.id
+                  },
+                  query: {
+                    tab: 'GatewayList'
+                  }
+                }
               }
             }
           }
         }
       },
       headerActions: {
-        hasMoreActions: false,
-        createRoute: 'DomainCreate'
+        hasLabelSearch: true,
+        createRoute: 'ZoneCreate'
       },
-      notice: this.$t('assets.DomainHelpMessage')
+      notice: this.$t('ZoneHelpMessage')
     }
   }
 }
 </script>
-
-<style>
-
-</style>

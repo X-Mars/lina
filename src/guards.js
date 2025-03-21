@@ -1,24 +1,28 @@
 /* eslint-disable no-unused-vars */
 import router from './router'
-import NProgress from 'nprogress' // progress bar
 import 'nprogress/nprogress.css' // progress bar style
 import { startup } from '@/utils/startup'
 import store from '@/store'
 import { isSameView } from '@/utils/jms'
+import { toSentenceCase } from '@/utils/common'
 
-NProgress.configure({
-  showSpinner: false
-}) // NProgress Configuration
+function beforeRouteChange(to, from, next) {
+  localStorage.setItem('activeTab', '')
+}
 
 router.beforeEach(async(to, from, next) => {
   // start progress bar
-  NProgress.start()
+  // NProgress.start()
   try {
+    await store.dispatch('common/cleanDrawerActionMeta')
     await startup({ to, from, next })
+    if (to.name && from.name && to.name !== from.name) {
+      await beforeRouteChange(to, from, next)
+    }
     next()
   } catch (e) {
     const msg = 'Start service error: ' + e
-    // debug(e)
+    console.log(msg)
   }
 })
 
@@ -32,7 +36,7 @@ function generateViewRoutesIfChange({ to, from }) {
 function setPageTitle() {
   const currentRoute = router.currentRoute
   const loginTitle = store.getters.publicSettings['INTERFACE']['login_title']
-  const routeTitle = currentRoute.meta.title
+  const routeTitle = toSentenceCase(currentRoute.meta.title)
   if (routeTitle) {
     document.title = routeTitle + ' - ' + loginTitle
   }
@@ -42,6 +46,6 @@ router.afterEach(async(to, from) => {
   // finish progress bar
   await setPageTitle()
   await generateViewRoutesIfChange({ to, from })
-  NProgress.done()
+  // NProgress.done()
 })
 

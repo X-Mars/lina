@@ -1,62 +1,75 @@
 <template>
-  <GenericListPage :table-config="tableConfig" :header-actions="headerActions" />
+  <GenericListPage :header-actions="headerActions" :table-config="tableConfig" />
 </template>
 
 <script>
 import GenericListPage from '@/layout/components/GenericListPage'
-import { getDaysFuture, getDaysAgo } from '@/utils/common'
+import { download } from '@/utils/common'
+import store from '@/store'
 
 export default {
   components: {
     GenericListPage
   },
   data() {
-    const now = new Date()
-    const dateFrom = getDaysAgo(7, now).toISOString()
-    const dateTo = getDaysFuture(1, now).toISOString()
     return {
       tableConfig: {
-        url: '/api/v1/audits/ftp-logs/',
-        columns: [
-          'user', 'asset', 'system_user', 'remote_addr', 'operate',
-          'filename', 'is_success', 'date_start'
-        ],
-        columnsMeta: {
-          user: {
-            showOverflowTooltip: true
-          },
-          asset: {
-            showOverflowTooltip: true
-          },
-          system_user: {
-            showOverflowTooltip: true
-          },
-          remote_addr: {
-            width: '140px'
-          },
-          filename: {
-            showOverflowTooltip: true
-          },
-          operate: {
-            width: '100px'
-          },
-          is_success: {
-            width: '80px'
-          }
+        columnsShow: {
+          default: [
+            'id', 'user', 'asset', 'account', 'operate',
+            'filename', 'date_start', 'is_success', 'actions'
+          ]
         },
-        extraQuery: {
-          date_to: dateTo,
-          date_from: dateFrom
+        url: '/api/v1/audits/ftp-logs/',
+        columnsMeta: {
+          is_success: { width: '100px' },
+          actions: {
+            formatterArgs: {
+              hasUpdate: false,
+              hasDelete: false,
+              hasClone: false,
+              extraActions: [
+                {
+                  name: 'download',
+                  title: this.$t('Download'),
+                  type: 'primary',
+                  can: ({ row }) => {
+                    return row.has_file
+                  },
+                  tip: ({ row }) => {
+                    const ftpFileMaxStore = store.getters.publicSettings['FTP_FILE_MAX_STORE']
+
+                    const downloadTip = this.$t('Download')
+                    const fileNotStoredTip = this.$t('FTPFileNotStored')
+                    const storageNotEnabledTip = this.$t('FTPStorageNotEnabled')
+                    const unknownStorageStateTip = this.$t('FTPUnknownStorageState')
+
+                    if (row.has_file) {
+                      return downloadTip
+                    }
+
+                    if (ftpFileMaxStore === 0) {
+                      return storageNotEnabledTip
+                    } else if (ftpFileMaxStore > 0) {
+                      return fileNotStoredTip
+                    } else {
+                      return unknownStorageStateTip
+                    }
+                  },
+                  callback: function({ row }) {
+                    // 跳转下载页面
+                    download(`/api/v1/audits/ftp-logs/${row.id}/file/download/`)
+                  }
+                }
+              ]
+            }
+          }
         }
       },
       headerActions: {
         hasLeftActions: false,
         hasImport: false,
-        hasDatePicker: true,
-        datePicker: {
-          dateStart: dateFrom,
-          dateEnd: dateTo
-        }
+        hasDatePicker: true
       }
     }
   }
